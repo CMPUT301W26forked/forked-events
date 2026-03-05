@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "432509158981",
+    "project_id": "forked-cf212",
+    "storage_bucket": "forked-cf212.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:432509158981:android:32b691ea2133824401052c",
+        "android_client_info": {
+          "package_name": "com.example.forked_proj"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcxKwdq1bamTuChKZNGW130hxfdk6Fwfs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

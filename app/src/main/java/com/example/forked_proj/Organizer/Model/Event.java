@@ -1,4 +1,4 @@
-package com.example.forked_proj.model;
+package com.example.forked_proj.Organizer.Model;
 
 import java.time.Instant;
 
@@ -15,25 +15,23 @@ public class Event {
         this.name = name;
     }
 
-    public String getId() {
-        return id;
-    }
+    public String getId() {return id;}
 
-    public String getName() {
-        return name;
-    }
+    public String getName() {return name;}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void setName(String name) {this.name = name;}
 
-    public String getPosterURL() {
-        return posterURL;
-    }
+    public String getPosterURL() {return posterURL;}
 
-    public void setPosterURL(String posterURL) {
-        this.posterURL = posterURL;
-    }
+    public void setPosterURL(String posterURL) {this.posterURL = posterURL;}
+
+    public Instant getRegStart() {return regStart;}
+
+    public void setRegStart(Instant regStart) {this.regStart = regStart;}
+
+    public Instant getRegENd() {return regENd;}
+
+    public void setRegENd(Instant regENd) {this.regENd = regENd;}
 }
 
 
