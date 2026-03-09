@@ -5,14 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.forked_proj"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.forked_proj"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
