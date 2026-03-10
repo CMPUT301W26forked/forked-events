@@ -27,7 +27,7 @@ public class EventsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         eventList = new ArrayList<>();
-        // Add sample data
+        // sample
         eventList.add(new Event(
                 "Swimming Lessons - Kids",
                 "Open",

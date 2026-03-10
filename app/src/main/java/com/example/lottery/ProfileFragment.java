@@ -27,7 +27,7 @@ public class ProfileFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         myEvents = new ArrayList<>();
-        // Sample data for user's events
+        // sample
         myEvents.add(new Event("Swimming Lessons - Beginner Kids", "Upcoming", "", "", "Mar 14 – May 14, 2026", "", "", ""));
         myEvents.add(new Event("Swimming Lessons - Beginner Kids", "Waitlisted", "", "", "February 21, 2026 - March 21, 2026", "", "", ""));
 

@@ -27,7 +27,7 @@ public class OrganizerFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         organizerEvents = new ArrayList<>();
-        // Sample data for the organizer
+        // sample
         organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
         organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
 

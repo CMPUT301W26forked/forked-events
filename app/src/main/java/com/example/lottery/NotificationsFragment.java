@@ -27,7 +27,7 @@ public class NotificationsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         notificationList = new ArrayList<>();
-        // Sample notifications matching the image
+        // sample
         notificationList.add(new Notification("You have successfully joined the event!", "Swimming Lessons - Beginner Kids", "March 14 – May 14, 2026", "Joined"));
         notificationList.add(new Notification("You are currently on the waitlist.", "Swimming Lessons - Beginner Kids", "March 14 – May 14, 2026", "Waitlisted"));
         notificationList.add(new Notification("You're invited to an event!", "Swimming Lessons - Beginner Kids", "March 14 – May 14, 2026", "Invitation"));

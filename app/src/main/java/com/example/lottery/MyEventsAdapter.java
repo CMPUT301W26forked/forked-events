@@ -31,7 +31,6 @@ public class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.MyEven
         holder.tvDate.setText(event.getDate());
         holder.tvStatus.setText(event.getStatus());
 
-        // Simple logic for status tag colors
         if ("Upcoming".equalsIgnoreCase(event.getStatus())) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
             holder.tvStatus.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.tag_open_text));

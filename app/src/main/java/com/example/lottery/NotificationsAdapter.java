@@ -38,7 +38,7 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             holder.tvStatus.setBackgroundResource(R.drawable.bg_tag_waitlisted);
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_waitlisted_text));
         } else if ("Invitation".equalsIgnoreCase(notification.getStatus())) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open); // Should ideally be a blue one
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
         }
     }

@@ -20,7 +20,6 @@ public class EventBuilderFragment extends Fragment {
         });
 
         view.findViewById(R.id.btnFinish).setOnClickListener(v -> {
-            // Handle save logic here
             getParentFragmentManager().popBackStack();
         });
 
