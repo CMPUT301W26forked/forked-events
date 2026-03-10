@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="bg_grey">#F5F5F5</color>
+    <color name="text_secondary">#757575</color>
+    <color name="tag_open_bg">#E8F5E9</color>
+    <color name="tag_open_text">#4CAF50</color>
+    <color name="tag_pending_bg">#FFF9C4</color>
+    <color name="tag_pending_text">#FBC02D</color>
+    <color name="toggle_bg">#E0E0E0</color>
+</resources>
