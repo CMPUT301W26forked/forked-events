@@ -25,7 +25,6 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
         
-        // Set default fragment
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, new EventsFragment())
@@ -39,12 +38,14 @@ public class MainActivity extends AppCompatActivity {
 
             if (itemId == R.id.nav_events) {
                 selectedFragment = new EventsFragment();
-            } else if (itemId == R.id.nav_profile) {
-                // selectedFragment = new ProfileFragment();
-            } else if (itemId == R.id.nav_notifications) {
-                // selectedFragment = new NotificationsFragment();
+            } else if (itemId == R.id.nav_organize) {
+                selectedFragment = new OrganizerFragment();
             } else if (itemId == R.id.nav_qr) {
-                // selectedFragment = new ScannerFragment();
+                selectedFragment = new QrScannerFragment();
+            } else if (itemId == R.id.nav_profile) {
+                selectedFragment = new ProfileFragment();
+            } else if (itemId == R.id.nav_notifications) {
+                selectedFragment = new NotificationsFragment();
             }
 
             if (selectedFragment != null) {

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_grey">
+    android:background="@color/input_bg">
 
     <TextView
         android:id="@+id/tvTitle"
@@ -19,39 +19,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <LinearLayout
-        android:id="@+id/toggleGroup"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/bg_toggle_container"
-        android:orientation="horizontal"
-        android:padding="4dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/bg_toggle_item"
-            android:gravity="center"
-            android:padding="8dp"
-            android:text="Browse Events"
-            android:textColor="@color/black" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:padding="8dp"
-            android:text="Organizer"
-            android:textColor="@color/text_secondary" />
-    </LinearLayout>
-
     <ImageView
         android:id="@+id/ivFilter"
         android:layout_width="24dp"
@@ -60,7 +27,7 @@
         android:layout_marginTop="16dp"
         android:src="@drawable/ic_filter"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toggleGroup" />
+        app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
     <HorizontalScrollView
         android:id="@+id/chipScroll"
