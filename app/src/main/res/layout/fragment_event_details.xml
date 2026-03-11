@@ -90,7 +90,7 @@
                     app:layout_constraintTop_toTopOf="@id/tvEventName" />
 
                 <ImageView
-                    android:id="@+id/ivEventPoster"
+                    android:id="@+id/tvEventPoster"
                     android:layout_width="0dp"
                     android:layout_height="200dp"
                     android:layout_marginTop="16dp"
@@ -110,7 +110,7 @@
                     android:textSize="14sp"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/ivEventPoster" />
+                    app:layout_constraintTop_toBottomOf="@id/tvEventPoster" />
 
                 <LinearLayout
                     android:id="@+id/statsContainer"
@@ -155,10 +155,12 @@
                         android:orientation="vertical"
                         android:padding="12dp">
 
+                        <!--changed the hardcoded number -->
                         <TextView
+                            android:id="@+id/tvWaitListCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="47"
+                            android:text="--"
                             android:textColor="#9575CD"
                             android:textSize="24sp"
                             android:textStyle="bold" />
@@ -236,6 +238,7 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tvEventDates"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Event Dates"
@@ -271,6 +274,7 @@
                             android:orientation="vertical">
 
                             <TextView
+                                android:id="@+id/tvEventLocation"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Location"
@@ -400,8 +404,27 @@
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:textStyle="bold"
+                    android:visibility = "visible"
                     app:cornerRadius="12dp"
                     app:layout_constraintTop_toBottomOf="@id/lotterySection" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLeave"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:backgroundTint="#090909"
+                    android:paddingVertical="12dp"
+                    android:text="Leave Waitlist"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    app:cornerRadius="12dp"
+                    app:layout_constraintTop_toBottomOf="@id/btnJoin" />
+
+
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </ScrollView>

@@ -29,6 +29,7 @@ public class EventsFragment extends Fragment {
         eventList = new ArrayList<>();
         // sample
         eventList.add(new Event(
+                "1",
                 "Swimming Lessons - Kids",
                 "Open",
                 "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
@@ -39,6 +40,7 @@ public class EventsFragment extends Fragment {
                 "47 Joined"
         ));
         eventList.add(new Event(
+                "2",
                 "Adult Basketball League",
                 "Lottery Pending",
                 "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
@@ -49,7 +51,7 @@ public class EventsFragment extends Fragment {
                 "12 Joined"
         ));
 
-        adapter = new EventAdapter(eventList);
+        adapter = new EventAdapter(eventList, getChildFragmentManager());
         recyclerView.setAdapter(adapter);
 
         return view;

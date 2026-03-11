@@ -5,15 +5,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     private List<Event> eventList;
+    private FragmentManager fragmentManager;
 
-    public EventAdapter(List<Event> eventList) {
+    public EventAdapter(List<Event> eventList, FragmentManager fragmentManager) {
         this.eventList = eventList;
+        this.fragmentManager = fragmentManager;
     }
 
     @NonNull
@@ -34,6 +37,11 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.tvSpots.setText(event.getSpots());
         holder.tvWaitlist.setText(event.getWaitlistInfo());
         holder.tvJoined.setText(event.getJoinedCount());
+        holder.itemView.setOnClickListener(v -> {
+            EventDetailsFragment fragment = EventDetailsFragment.newInstance(event.getId(), event.getTitle(),
+                    event.getDescription(), event.getLocation(), event.getDate(), event.getStatus());
+            fragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).addToBackStack(null).commit();
+        });
     }
 
     @Override

@@ -28,8 +28,8 @@ public class OrganizerFragment extends Fragment {
 
         organizerEvents = new ArrayList<>();
         // sample
-        organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
-        organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
+        organizerEvents.add(new Event("","Example Event", "", "", "", "", "", "", ""));
+        organizerEvents.add(new Event("","Example Event", "", "", "", "", "", "", ""));
 
         adapter = new OrganizerAdapter(organizerEvents);
         recyclerView.setAdapter(adapter);
