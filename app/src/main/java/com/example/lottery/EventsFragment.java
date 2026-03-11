@@ -14,21 +14,18 @@ import java.util.List;
 
 public class EventsFragment extends Fragment {
 
-    private RecyclerView recyclerView;
-    private EventAdapter adapter;
-    private List<Event> eventList;
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_events, container, false);
 
-        recyclerView = view.findViewById(R.id.recyclerView);
+        RecyclerView recyclerView = view.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        eventList = new ArrayList<>();
+        List<Event> eventList = new ArrayList<>();
         // sample
         eventList.add(new Event(
+                "1",
                 "Swimming Lessons - Kids",
                 "Open",
                 "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
@@ -39,6 +36,7 @@ public class EventsFragment extends Fragment {
                 "47 Joined"
         ));
         eventList.add(new Event(
+                "2",
                 "Adult Basketball League",
                 "Lottery Pending",
                 "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
@@ -49,7 +47,7 @@ public class EventsFragment extends Fragment {
                 "12 Joined"
         ));
 
-        adapter = new EventAdapter(eventList);
+        EventAdapter adapter = new EventAdapter(eventList);
         recyclerView.setAdapter(adapter);
 
         return view;

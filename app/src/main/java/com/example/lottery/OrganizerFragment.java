@@ -27,13 +27,52 @@ public class OrganizerFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         organizerEvents = new ArrayList<>();
-        // sample
-        organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
-        organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
+        // sample data with IDs
+        organizerEvents.add(new Event("1", "Example Event 1", "Open", "Description 1", "Location 1", "2023-12-01", "100", "Info", "10"));
+        organizerEvents.add(new Event("2", "Example Event 2", "Open", "Description 2", "Location 2", "2023-12-02", "50", "Info", "5"));
 
-        adapter = new OrganizerAdapter(organizerEvents);
+        adapter = new OrganizerAdapter(organizerEvents, new OrganizerAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Event event) {
+                navigateToManagement(event);
+            }
+
+            @Override
+            public void onEditClick(Event event) {
+                navigateToEdit(event);
+            }
+
+            @Override
+            public void onManageClick(Event event) {
+                navigateToManagement(event);
+            }
+        });
         recyclerView.setAdapter(adapter);
 
         return view;
+    }
+
+    private void navigateToManagement(Event event) {
+        EventManagementFragment fragment = new EventManagementFragment();
+        Bundle args = new Bundle();
+        args.putSerializable("event", event);
+        fragment.setArguments(args);
+
+        getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void navigateToEdit(Event event) {
+        EventBuilderFragment fragment = new EventBuilderFragment();
+        Bundle args = new Bundle();
+        args.putSerializable("event", event);
+        fragment.setArguments(args);
+
+        getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 }

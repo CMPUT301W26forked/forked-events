@@ -1,6 +1,9 @@
 package com.example.lottery;
 
-public class Event {
+import java.io.Serializable;
+
+public class Event implements Serializable {
+    private String id;
     private String title;
     private String status;
     private String description;
@@ -10,7 +13,8 @@ public class Event {
     private String waitlistInfo;
     private String joinedCount;
 
-    public Event(String title, String status, String description, String location, String date, String spots, String waitlistInfo, String joinedCount) {
+    public Event(String id, String title, String status, String description, String location, String date, String spots, String waitlistInfo, String joinedCount) {
+        this.id = id;
         this.title = title;
         this.status = status;
         this.description = description;
@@ -21,6 +25,8 @@ public class Event {
         this.joinedCount = joinedCount;
     }
 
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
     public String getTitle() { return title; }
     public String getStatus() { return status; }
     public String getDescription() { return description; }

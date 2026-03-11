@@ -4,15 +4,41 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
 public class EventManagementFragment extends Fragment {
 
+    private Event event;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_event_management, container, false);
+        View view = inflater.inflate(R.layout.fragment_event_management, container, false);
+
+        if (getArguments() != null) {
+            event = (Event) getArguments().getSerializable("event");
+        }
+
+        ImageButton btnBack = view.findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> getParentFragmentManager().popBackStack());
+
+        CardView cardWaitlist = view.findViewById(R.id.cardWaitlist);
+        cardWaitlist.setOnClickListener(v -> {
+            WaitlistFragment fragment = new WaitlistFragment();
+            Bundle args = new Bundle();
+            args.putSerializable("event", event);
+            fragment.setArguments(args);
+
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
+        
+        return view;
     }
 }
