@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -17,6 +19,7 @@ public class OrganizerFragment extends Fragment {
     private RecyclerView recyclerView;
     private OrganizerAdapter adapter;
     private List<Event> organizerEvents;
+    private Button btnCreateEvent;
 
     @Nullable
     @Override
@@ -25,11 +28,16 @@ public class OrganizerFragment extends Fragment {
 
         recyclerView = view.findViewById(R.id.rvOrganizerEvents);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        
+        btnCreateEvent = view.findViewById(R.id.btnCreateEvent);
+        btnCreateEvent.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new EventBuilderFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
 
         organizerEvents = new ArrayList<>();
-        // sample
-        organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
-        organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
 
         adapter = new OrganizerAdapter(organizerEvents);
         recyclerView.setAdapter(adapter);
