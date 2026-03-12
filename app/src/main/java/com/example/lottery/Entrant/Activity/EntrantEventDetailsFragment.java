@@ -1,5 +1,6 @@
 package com.example.lottery.Entrant.Activity;
 
+import android.app.AlertDialog;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,7 +16,9 @@ import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.example.lottery.Common.Utils.DeviceManager;
+import com.example.lottery.Entrant.Repo.WaitlistCallback;
 import com.example.lottery.Entrant.Service.EntrantService;
+import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.firestore.FieldValue;
@@ -32,7 +35,8 @@ public class EntrantEventDetailsFragment extends Fragment {
     private FirebaseFirestore db;
     private EntrantService entrantService;
     private boolean isOnWaitlist = false;
-    private String entrantId;
+    public String entrantId;
+    public WaitlistService waitlistService;
 
     public EntrantEventDetailsFragment() {
     }
@@ -42,6 +46,7 @@ public class EntrantEventDetailsFragment extends Fragment {
                              Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_event_details, container, false);
+
 
         // Views
         ImageButton btnBack         = view.findViewById(R.id.btnBack);
@@ -61,6 +66,7 @@ public class EntrantEventDetailsFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         entrantService = new EntrantService();
         entrantId = DeviceManager.getDeviceId(requireContext());
+        waitlistService = new WaitlistService();
 
         if (getArguments() != null) {
             eventId = getArguments().getString("eventId");
@@ -84,6 +90,7 @@ public class EntrantEventDetailsFragment extends Fragment {
         });
 
         return view;
+
     }
 
     private void loadEventDetails(View view,
@@ -202,5 +209,12 @@ public class EntrantEventDetailsFragment extends Fragment {
         btn.setBackgroundTintList(ColorStateList.valueOf(
                 ContextCompat.getColor(requireContext(), android.R.color.holo_red_light)
         ));
+    }
+
+    public void showStayInList(MaterialButton btnJoin){
+        new AlertDialog.Builder(requireContext()).setTitle("Not Selected").setMessage("Stay in waiting list?").setPositiveButton("Yes", (dialog, which) ->
+                waitlistService.stayInList(eventId, entrantId, new WaitlistCallback<Void>() {
+                    @Override public void onSuccess(Void r) {}
+                    @Override public void onError(Exception e) {} })).setNegativeButton("No", (dialog, which) -> leaveWaitlist(btnJoin)).setCancelable(false).show();
     }
 }
