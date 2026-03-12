@@ -21,13 +21,17 @@ import com.example.lottery.Entrant.Service.EntrantService;
 import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class EntrantEventDetailsFragment extends Fragment {
 
@@ -65,7 +69,15 @@ public class EntrantEventDetailsFragment extends Fragment {
 
         db = FirebaseFirestore.getInstance();
         entrantService = new EntrantService();
-        entrantId = DeviceManager.getDeviceId(requireContext());
+        
+        // Use Firebase UID if logged in, otherwise fall back to Device ID
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            entrantId = currentUser.getUid();
+        } else {
+            entrantId = DeviceManager.getDeviceId(requireContext());
+        }
+        
         waitlistService = new WaitlistService();
 
         if (getArguments() != null) {
@@ -145,8 +157,8 @@ public class EntrantEventDetailsFragment extends Fragment {
                     }
 
                     // Check if already on waitlist
-                    List<String> registeredIds = (List<String>) doc.get("registeredEntrantIds");
-                    if (registeredIds != null && registeredIds.contains(entrantId)) {
+                    List<String> waitlistedIds = (List<String>) doc.get("waitlistedEntrantIds");
+                    if (waitlistedIds != null && waitlistedIds.contains(entrantId)) {
                         isOnWaitlist = true;
                         setLeaveWaitlistStyle(btnJoin);
                     } else {
@@ -164,34 +176,60 @@ public class EntrantEventDetailsFragment extends Fragment {
 
         entrantService.signUpForEvent(entrantId, eventId);
 
-        db.collection("events")
-                .document(eventId)
-                .update("registeredEntrantIds", FieldValue.arrayUnion(entrantId),
-                        "waitlistCount", FieldValue.increment(1))
-                .addOnSuccessListener(unused -> {
-                    isOnWaitlist = true;
-                    setLeaveWaitlistStyle(btnJoin);
-                    btnJoin.setEnabled(true);
-                    Toast.makeText(getContext(), "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    btnJoin.setEnabled(true);
-                    Toast.makeText(getContext(), "Failed to join waitlist", Toast.LENGTH_SHORT).show();
-                });
+        // Fetch user info to store in the entrant document
+        db.collection("users").document(entrantId).get().addOnSuccessListener(userDoc -> {
+            String name = userDoc.exists() ? userDoc.getString("name") : "Guest";
+            
+            Map<String, Object> entrantData = new HashMap<>();
+            entrantData.put("status", "WAITING");
+            entrantData.put("name", name);
+            entrantData.put("joinedAt", FieldValue.serverTimestamp());
+
+            db.collection("events").document(eventId).collection("entrants").document(entrantId)
+                    .set(entrantData)
+                    .addOnSuccessListener(aVoid -> {
+                        db.collection("events")
+                                .document(eventId)
+                                .update("waitlistedEntrantIds", FieldValue.arrayUnion(entrantId),
+                                        "waitlistCount", FieldValue.increment(1))
+                                .addOnSuccessListener(unused -> {
+                                    isOnWaitlist = true;
+                                    setLeaveWaitlistStyle(btnJoin);
+                                    btnJoin.setEnabled(true);
+                                    Toast.makeText(getContext(), "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
+                                })
+                                .addOnFailureListener(e -> {
+                                    btnJoin.setEnabled(true);
+                                    Toast.makeText(getContext(), "Failed to update event counts", Toast.LENGTH_SHORT).show();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
+                        btnJoin.setEnabled(true);
+                        Toast.makeText(getContext(), "Failed to join waitlist", Toast.LENGTH_SHORT).show();
+                    });
+        });
     }
 
     private void leaveWaitlist(MaterialButton btnJoin) {
         btnJoin.setEnabled(false);
 
-        db.collection("events")
-                .document(eventId)
-                .update("registeredEntrantIds", FieldValue.arrayRemove(entrantId),
-                        "waitlistCount", FieldValue.increment(-1))
-                .addOnSuccessListener(unused -> {
-                    isOnWaitlist = false;
-                    setJoinWaitlistStyle(btnJoin);
-                    btnJoin.setEnabled(true);
-                    Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
+        db.collection("events").document(eventId).collection("entrants").document(entrantId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    db.collection("events")
+                            .document(eventId)
+                            .update("waitlistedEntrantIds", FieldValue.arrayRemove(entrantId),
+                                    "waitlistCount", FieldValue.increment(-1))
+                            .addOnSuccessListener(unused -> {
+                                isOnWaitlist = false;
+                                setJoinWaitlistStyle(btnJoin);
+                                btnJoin.setEnabled(true);
+                                Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> {
+                                btnJoin.setEnabled(true);
+                                Toast.makeText(getContext(), "Failed to update event counts", Toast.LENGTH_SHORT).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
                     btnJoin.setEnabled(true);

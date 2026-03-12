@@ -25,6 +25,7 @@ import com.example.lottery.organizer.RepoCallback;
 public class EventManagementFragment extends Fragment {
 
     private String eventId = "test_event";
+    private String eventName = "Event";
     private FSEventRepo repo;
     private EventService service;
 
@@ -35,6 +36,7 @@ public class EventManagementFragment extends Fragment {
 
         if (getArguments() != null) {
             eventId = getArguments().getString("event_id", "test_event");
+            eventName = getArguments().getString("event_name", "Event");
         }
 
         repo = new FSEventRepo();
@@ -49,6 +51,14 @@ public class EventManagementFragment extends Fragment {
 
         View btnRunLottery = view.findViewById(R.id.btnRunLottery);
         btnRunLottery.setOnClickListener(v -> showSampleSizeDiaglog());
+
+        View btnViewLists = view.findViewById(R.id.btnViewLists);
+        btnViewLists.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, ViewListsFragment.newInstance(eventId, eventName))
+                    .addToBackStack(null)
+                    .commit();
+        });
 
         return view;
     }

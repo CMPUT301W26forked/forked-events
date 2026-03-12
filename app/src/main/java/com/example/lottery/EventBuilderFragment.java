@@ -29,13 +29,13 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.text.SimpleDateFormat;
 
 /**
  * Organizer event setup/edit page
@@ -161,7 +161,12 @@ public class EventBuilderFragment extends Fragment {
         eventData.put("status", "open");
         eventData.put("confirmedCount", 0);
         eventData.put("waitlistCount", 0);
-        eventData.put("registeredEntrantIds", new ArrayList<String>());
+        
+        // Arrays for entrant tracking
+        eventData.put("waitlistedEntrantIds", new ArrayList<String>());
+        eventData.put("pendingEntrantIds", new ArrayList<String>()); // For Pending list
+        eventData.put("registeredEntrantIds", new ArrayList<String>()); // For Final list
+        eventData.put("cancelledEntrantIds", new ArrayList<String>()); // For Cancelled list
         
         // Handle numerical fields
         try {

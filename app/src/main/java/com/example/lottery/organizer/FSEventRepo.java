@@ -3,6 +3,7 @@ package com.example.lottery.organizer;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
@@ -66,31 +67,43 @@ public class FSEventRepo implements EventRepo {
 
     @Override
     public void getWaitingEntrantIds(String eventId, RepoCallback<List<String>> cb) {
-        db.collection("events")
-                .document(eventId)
-                .collection("entrants")
-                .get()
-                .addOnSuccessListener(snapshot -> {
-                    List<String> ids = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : snapshot) {
-                        if ("WAITING".equals(doc.getString("status"))) {
-                            ids.add(doc.getId());
-                        }
-                    }
-                    cb.onSuccess(ids);
-                })
-                .addOnFailureListener(cb::onError);
+        // Get IDs directly from the waitlistedEntrantIds array to ensure consistency with manual testing
+        ref(eventId).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                List<String> ids = (List<String>) doc.get("waitlistedEntrantIds");
+                cb.onSuccess(ids != null ? ids : new ArrayList<>());
+            } else {
+                cb.onSuccess(new ArrayList<>());
+            }
+        }).addOnFailureListener(cb::onError);
     }
 
     @Override
     public void markEntrantSelected(String eventId, String entrantId, RepoCallback<Void> cb) {
+        // 1. Update status in subcollection to SELECTED
         db.collection("events")
                 .document(eventId)
                 .collection("entrants")
                 .document(entrantId)
                 .update("status", "SELECTED")
-                .addOnSuccessListener(v -> cb.onSuccess(null))
-                .addOnFailureListener(cb::onError);
+                .addOnSuccessListener(v -> {
+                    // 2. Transition ID from waitlisted array to pendingEntrantIds array
+                    ref(eventId).update(
+                            "waitlistedEntrantIds", FieldValue.arrayRemove(entrantId),
+                            "pendingEntrantIds", FieldValue.arrayUnion(entrantId),
+                            "waitlistCount", FieldValue.increment(-1)
+                    ).addOnSuccessListener(unused -> cb.onSuccess(null))
+                     .addOnFailureListener(cb::onError);
+                })
+                .addOnFailureListener(e -> {
+                    // Even if subcollection update fails, try updating the arrays
+                    ref(eventId).update(
+                            "waitlistedEntrantIds", FieldValue.arrayRemove(entrantId),
+                            "pendingEntrantIds", FieldValue.arrayUnion(entrantId),
+                            "waitlistCount", FieldValue.increment(-1)
+                    ).addOnSuccessListener(unused -> cb.onSuccess(null))
+                     .addOnFailureListener(cb::onError);
+                });
     }
 
     @Override
@@ -105,7 +118,7 @@ public class FSEventRepo implements EventRepo {
         db.collection("notifications")
                 .add(notification)
                 .addOnSuccessListener(doc -> {
-                    db.collection("entrants")
+                    db.collection("users")
                             .document(entrantId)
                             .collection("notification")
                             .add(notification)

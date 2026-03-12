@@ -21,7 +21,6 @@ public class OrganizerAdapter extends RecyclerView.Adapter<OrganizerAdapter.Even
 
     private List<Event> eventList;
     private FragmentManager fragmentManager;
-    MaterialButton btnManage;
 
     public OrganizerAdapter(List<Event> eventList, FragmentManager fragmentManager) {
         this.eventList = eventList;
@@ -43,6 +42,7 @@ public class OrganizerAdapter extends RecyclerView.Adapter<OrganizerAdapter.Even
         holder.btnManage.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
             bundle.putString("event_id", event.getEventId());
+            bundle.putString("event_name", event.getTitle());
 
             EventManagementFragment fragment = new EventManagementFragment();
             fragment.setArguments(bundle);
