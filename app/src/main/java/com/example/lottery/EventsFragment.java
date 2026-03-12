@@ -49,7 +49,7 @@ public class EventsFragment extends Fragment {
                 "12 Joined"
         ));
 
-        adapter = new EventAdapter(eventList);
+        adapter = new EventAdapter(eventList, event -> {});
         recyclerView.setAdapter(adapter);
 
         return view;
