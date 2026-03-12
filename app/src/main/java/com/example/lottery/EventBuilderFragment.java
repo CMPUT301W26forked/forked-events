@@ -31,8 +31,11 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Organizer event setup/edit page
+ * Organizer can upload/update an event poster; Set the registration start/end time;
+ */
 public class EventBuilderFragment extends Fragment {
-
     private String eventId = "test_event";
     private EventService service;
     private FSEventRepo repo;
@@ -48,6 +51,10 @@ public class EventBuilderFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        if (getArguments() != null) {
+            eventId = getArguments().getString("event_id", "test_event");
+        }
+
         View view = inflater.inflate(R.layout.fragment_event_builder, container, false);
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
@@ -77,6 +84,11 @@ public class EventBuilderFragment extends Fragment {
     private interface MillisCallback {
         void onPicked(long millis);
     }
+
+    /**
+     * Open a date picker follower by a time picker, then returns the selected
+     * date time as milliseconds through the cb
+     */
     private void pickDateTime(MillisCallback cb) {
         Calendar cal = Calendar.getInstance();
 
@@ -95,6 +107,9 @@ public class EventBuilderFragment extends Fragment {
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    /**
+     * Let organizer pick a registration start/end time then save to FS
+     */
     private void pickRegistrationPeriod() {
         pickDateTime(startMillis ->
                 pickDateTime(endMillis -> {
@@ -116,6 +131,9 @@ public class EventBuilderFragment extends Fragment {
                 }));
     }
 
+    /**
+     * Upload poster to FS storage (download URI in event document)
+     */
     private void uploadPoster(Uri localUri) {
         service.uploadPosterAndSaveURL(eventId, localUri, new RepoCallback<String>() {
             @Override
@@ -131,6 +149,9 @@ public class EventBuilderFragment extends Fragment {
         });
     }
 
+    /**
+     * fetch lastest event data from FS then reload UI
+     */
     private void loadAndRender() {
         repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
             @Override

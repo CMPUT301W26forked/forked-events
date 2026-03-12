@@ -5,7 +5,9 @@ import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.List;
 
-
+/**
+ * repo interface
+ */
 public interface EventRepo {
     void getEvent(String eventId, RepoCallback<DocumentSnapshot> cb);
     void setRegStartPeriod(String eventId, Timestamp start, Timestamp end, RepoCallback<Void> cb);
