@@ -2,12 +2,12 @@ package com.example.lottery;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
-import com.google.firebase.firestore.PropertyName;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 public class Event {
+
     private String eventId;
     private String title;
     private String status;
@@ -17,13 +17,17 @@ public class Event {
     private String spots;
     private String waitlistInfo;
     private String joinedCount;
-    
-    // Fields matching Firestore
+
+    // Firestore fields
     private String name;
     private long totalSpots;
-    private long waitListCount;
+    private long waitlistCount;
     private Timestamp registrationStart;
     private Timestamp registrationEnd;
+
+    public Event() {
+        // Required empty constructor for Firestore
+    }
 
     public Event(String title, String status, String description, String location,
                  String date, String spots, String waitlistInfo, String joinedCount) {
@@ -118,10 +122,7 @@ public class Event {
 
     @Exclude
     public String getJoinedCount() {
-        if (waitListCount >= 0) {
-            return waitListCount + " Joined";
-        }
-        return joinedCount;
+        return waitlistCount + " Joined";
     }
 
     public void setJoinedCount(String joinedCount) {
@@ -144,12 +145,12 @@ public class Event {
         this.totalSpots = totalSpots;
     }
 
-    public long getWaitListCount() {
-        return waitListCount;
+    public long getWaitlistCount() {
+        return waitlistCount;
     }
 
-    public void setWaitListCount(long waitListCount) {
-        this.waitListCount = waitListCount;
+    public void setWaitlistCount(long waitlistCount) {
+        this.waitlistCount = waitlistCount;
     }
 
     public Timestamp getRegistrationStart() {
