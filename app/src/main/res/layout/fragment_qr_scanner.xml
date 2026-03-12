@@ -48,33 +48,21 @@
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="48dp"
         android:gravity="center"
-        android:text="Align the QR code within the frame to check in to the event."
+        android:text="Align the promotional QR code within the frame to view event details."
         android:textColor="@color/black"
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/qrHeaderBg" />
 
-    <FrameLayout
-        android:id="@+id/cameraFrame"
+    <com.journeyapps.barcodescanner.DecoratedBarcodeView
+        android:id="@+id/barcodeScanner"
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:layout_marginTop="24dp"
-        android:background="@drawable/bg_camera_frame"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvInstruction">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:text="Camera View\n(Scan QR Code Here)"
-            android:textColor="@color/black"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-    </FrameLayout>
+        app:layout_constraintTop_toBottomOf="@id/tvInstruction" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStartScanning"
@@ -92,6 +80,6 @@
         app:cornerRadius="12dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cameraFrame" />
+        app:layout_constraintTop_toBottomOf="@id/barcodeScanner" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

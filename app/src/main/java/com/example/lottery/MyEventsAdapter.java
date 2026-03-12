@@ -1,20 +1,31 @@
 package com.example.lottery;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.List;
 
 public class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.MyEventViewHolder> {
 
-    private List<Event> eventList;
+    public interface OnViewDetailsClickListener {
+        void onViewDetailsClick(Event event);
+    }
 
-    public MyEventsAdapter(List<Event> eventList) {
+    private final List<Event> eventList;
+    private final OnViewDetailsClickListener listener;
+
+    public MyEventsAdapter(List<Event> eventList, OnViewDetailsClickListener listener) {
         this.eventList = eventList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -27,17 +38,32 @@ public class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.MyEven
     @Override
     public void onBindViewHolder(@NonNull MyEventViewHolder holder, int position) {
         Event event = eventList.get(position);
-        holder.tvTitle.setText(event.getTitle());
-        holder.tvDate.setText(event.getDate());
-        holder.tvStatus.setText(event.getStatus());
 
-        if ("Upcoming".equalsIgnoreCase(event.getStatus())) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
-            holder.tvStatus.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.tag_open_text));
-        } else if ("Waitlisted".equalsIgnoreCase(event.getStatus())) {
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_tag_waitlisted);
-            holder.tvStatus.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.tag_waitlisted_text));
+        holder.tvEventTitle.setText(event.getTitle());
+        holder.tvEventDate.setText(event.getDate());
+        holder.tvEventStatus.setText(event.getStatus());
+
+        String status = event.getStatus() == null ? "" : event.getStatus().trim();
+
+        if (status.equalsIgnoreCase("Upcoming")) {
+            holder.tvEventStatus.setText("Upcoming");
+            holder.tvEventStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#E8F5E9")));
+            holder.tvEventStatus.setTextColor(Color.parseColor("#4CAF50"));
+        } else if (status.equalsIgnoreCase("Waitlisted")) {
+            holder.tvEventStatus.setText("Waitlisted");
+            holder.tvEventStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#F3E5F5")));
+            holder.tvEventStatus.setTextColor(Color.parseColor("#9C27B0"));
+        } else {
+            holder.tvEventStatus.setText(status);
+            holder.tvEventStatus.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#EEEEEE")));
+            holder.tvEventStatus.setTextColor(Color.BLACK);
         }
+
+        holder.btnViewDetails.setOnClickListener(v -> {
+            if (listener != null) {
+                listener.onViewDetailsClick(event);
+            }
+        });
     }
 
     @Override
@@ -46,13 +72,15 @@ public class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.MyEven
     }
 
     static class MyEventViewHolder extends RecyclerView.ViewHolder {
-        TextView tvTitle, tvDate, tvStatus;
+        TextView tvEventTitle, tvEventDate, tvEventStatus;
+        Button btnViewDetails;
 
         public MyEventViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvTitle = itemView.findViewById(R.id.tvMyEventTitle);
-            tvDate = itemView.findViewById(R.id.tvMyEventDate);
-            tvStatus = itemView.findViewById(R.id.tvMyEventStatus);
+            tvEventTitle = itemView.findViewById(R.id.tvMyEventTitle);
+            tvEventDate = itemView.findViewById(R.id.tvMyEventDate);
+            tvEventStatus = itemView.findViewById(R.id.tvMyEventStatus);
+            btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
         }
     }
 }

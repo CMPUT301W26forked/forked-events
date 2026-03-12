@@ -12,7 +12,7 @@ public class EntrantService {
     }
 
     public void signUpForEvent(String entrantId, String eventId) {
-        db.collection("entrants")
+        db.collection("users")
                 .document(entrantId)
                 .update("registeredEventIds", FieldValue.arrayUnion(eventId));
     }

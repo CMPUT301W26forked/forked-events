@@ -2,7 +2,6 @@ package com.example.lottery.Entrant.Activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -40,8 +39,6 @@ public class LoginActivity extends AppCompatActivity {
 
         mAuth = FirebaseAuth.getInstance();
         db    = FirebaseFirestore.getInstance();
-
-        mAuth.signOut(); // temporary - remove after testing
 
 
         if (mAuth.getCurrentUser() != null) {
@@ -103,7 +100,7 @@ public class LoginActivity extends AppCompatActivity {
     // ─── Email/Password Login ───────────────────────────────────────────────
 
     private void handleLogin() {
-        String email    = etEmail.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
         if (email.isEmpty() || password.isEmpty()) {
@@ -115,8 +112,25 @@ public class LoginActivity extends AppCompatActivity {
 
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
-                    Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
-                    navigateToMain(false);
+                    String uid = authResult.getUser().getUid();
+
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("uid", uid);
+                    updates.put("email", authResult.getUser().getEmail());
+                    updates.put("isGuest", false);
+                    updates.put("role", "entrant");
+
+                    db.collection("users")
+                            .document(uid)
+                            .set(updates, com.google.firebase.firestore.SetOptions.merge())
+                            .addOnSuccessListener(unused -> {
+                                Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
+                                navigateToMain(false);
+                            })
+                            .addOnFailureListener(e -> {
+                                btnPrimary.setEnabled(true);
+                                Toast.makeText(this, "Failed to load profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
                     btnPrimary.setEnabled(true);
@@ -184,24 +198,22 @@ public class LoginActivity extends AppCompatActivity {
 
     private void saveUserToFirestore(String uid, String name, String email,
                                      String role, boolean isGuest) {
-        String deviceId = Settings.Secure.getString(
-                getContentResolver(),
-                Settings.Secure.ANDROID_ID
-        );
-
         Map<String, Object> userProfile = new HashMap<>();
         userProfile.put("uid", uid);
         userProfile.put("name", name);
         userProfile.put("role", role);
         userProfile.put("isGuest", isGuest);
-        userProfile.put("deviceId", deviceId);
+        userProfile.put("phone", "");
+        userProfile.put("registeredEventIds", new java.util.ArrayList<String>());
 
         if (email != null) {
             userProfile.put("email", email);
+        } else {
+            userProfile.put("email", "");
         }
 
         db.collection("users").document(uid)
-                .set(userProfile)
+                .set(userProfile, com.google.firebase.firestore.SetOptions.merge())
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this,
                             isGuest ? "Continuing as guest" : "Account created!",

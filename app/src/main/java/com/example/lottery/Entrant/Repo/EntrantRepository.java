@@ -20,19 +20,21 @@ public class EntrantRepository {
     }
 
     public void createEntrantIfNotExists(String entrantId) {
-        db.collection("entrants")
+        db.collection("users")
                 .document(entrantId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (!documentSnapshot.exists()) {
                         Map<String, Object> entrant = new HashMap<>();
-                        entrant.put("id", entrantId);
+                        entrant.put("uid", entrantId);
                         entrant.put("name", "");
                         entrant.put("email", "");
                         entrant.put("phone", "");
                         entrant.put("registeredEventIds", new ArrayList<String>());
+                        entrant.put("role", "entrant");
+                        entrant.put("isGuest", false);
 
-                        db.collection("entrants").document(entrantId).set(entrant);
+                        db.collection("users").document(entrantId).set(entrant);
                     }
                 });
     }
