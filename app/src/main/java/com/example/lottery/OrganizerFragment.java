@@ -4,6 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -12,6 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Organizer dashboard fragment
+ * Display events and allow navigation
+ */
 public class OrganizerFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -28,12 +34,19 @@ public class OrganizerFragment extends Fragment {
 
         organizerEvents = new ArrayList<>();
         // sample
-        organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
+        organizerEvents.add(new Event("test_event", "", "", "", "", "", "", ""));
         organizerEvents.add(new Event("Example Event", "", "", "", "", "", "", ""));
 
-        adapter = new OrganizerAdapter(organizerEvents);
+        adapter = new OrganizerAdapter(organizerEvents, getParentFragmentManager());
         recyclerView.setAdapter(adapter);
 
+        // to event builder
+        view.findViewById(R.id.btnCreateEvent).setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new EventBuilderFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
         return view;
     }
 }
