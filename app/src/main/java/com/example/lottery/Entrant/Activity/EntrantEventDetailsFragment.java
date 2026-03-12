@@ -171,6 +171,10 @@ public class EntrantEventDetailsFragment extends Fragment {
                 );
     }
 
+    /***
+     * Adds entrant to waiting list.
+     * @param btnJoin Button used to join the waitlist.
+     */
     private void joinWaitlist(MaterialButton btnJoin) {
         btnJoin.setEnabled(false);
 
@@ -210,6 +214,10 @@ public class EntrantEventDetailsFragment extends Fragment {
         });
     }
 
+    /***
+     * Removes entrant from the waiting list.
+     * @param btnJoin Button used to leave the waitlist.
+     */
     private void leaveWaitlist(MaterialButton btnJoin) {
         btnJoin.setEnabled(false);
 
