@@ -211,6 +211,10 @@ public class EntrantEventDetailsFragment extends Fragment {
         ));
     }
 
+    /***
+     * Displays dialog asking entrant if they want to remain in waiting list after not being selected.
+     * @param btnJoin The join/leave button
+     */
     public void showStayInList(MaterialButton btnJoin){
         new AlertDialog.Builder(requireContext()).setTitle("Not Selected").setMessage("Stay in waiting list?").setPositiveButton("Yes", (dialog, which) ->
                 waitlistService.stayInList(eventId, entrantId, new WaitlistCallback<Void>() {
