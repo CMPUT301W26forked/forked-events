@@ -1,5 +1,6 @@
 package com.example.lottery.Entrant.Activity;
 
+import android.app.AlertDialog;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -14,7 +15,10 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.example.lottery.Common.Utils.DeviceManager;
+import com.example.lottery.Entrant.Repo.WaitlistCallback;
 import com.example.lottery.Entrant.Service.EntrantService;
+import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
@@ -33,7 +37,8 @@ public class EntrantEventDetailsFragment extends Fragment {
     private FirebaseFirestore db;
     private EntrantService entrantService;
     private boolean isOnWaitlist = false;
-    private String entrantId;
+    public String entrantId;
+    public WaitlistService waitlistService;
 
     public EntrantEventDetailsFragment() {
     }
@@ -55,18 +60,18 @@ public class EntrantEventDetailsFragment extends Fragment {
         TextView tvEventDates = view.findViewById(R.id.tvEventDates);
         TextView tvLocation = view.findViewById(R.id.tvLocation);
         TextView tvOrganizer = view.findViewById(R.id.tvOrganizer);
-        TextView tvAgeRange = view.findViewById(R.id.tvAgeRange);
         ImageView ivEventPoster = view.findViewById(R.id.ivEventPoster);
 
         db = FirebaseFirestore.getInstance();
         entrantService = new EntrantService();
+        waitlistService = new WaitlistService();
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser == null) {
-            Toast.makeText(getContext(), "No user logged in", Toast.LENGTH_SHORT).show();
-            return view;
+        if (currentUser != null) {
+            entrantId = currentUser.getUid();
+        } else {
+            entrantId = DeviceManager.getDeviceId(requireContext());
         }
-        entrantId = currentUser.getUid();
 
         if (getArguments() != null) {
             eventId = getArguments().getString("eventId");
@@ -74,7 +79,7 @@ public class EntrantEventDetailsFragment extends Fragment {
 
         loadEventDetails(tvEventName, tvDescription, tvStatusTag,
                 tvTotalSpots, tvWaitlist, tvConfirmed,
-                tvEventDates, tvLocation, tvOrganizer, tvAgeRange,
+                tvEventDates, tvLocation, tvOrganizer,
                 ivEventPoster, btnJoin);
 
         btnBack.setOnClickListener(v ->
@@ -96,7 +101,7 @@ public class EntrantEventDetailsFragment extends Fragment {
                                   TextView tvStatusTag, TextView tvTotalSpots,
                                   TextView tvWaitlist, TextView tvConfirmed,
                                   TextView tvEventDates, TextView tvLocation,
-                                  TextView tvOrganizer, TextView tvAgeRange,
+                                  TextView tvOrganizer,
                                   ImageView ivEventPoster, MaterialButton btnJoin) {
         if (eventId == null) {
             Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
@@ -114,11 +119,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                     tvStatusTag.setText(doc.getString("status"));
                     tvLocation.setText(doc.getString("location"));
                     tvOrganizer.setText(doc.getString("organizer"));
-                    tvAgeRange.setText(doc.getString("ageRange"));
 
                     Long totalSpots = doc.getLong("totalSpots");
                     Long waitlistCount = doc.getLong("waitlistCount");
                     Long confirmedCount = doc.getLong("confirmedCount");
+
                     tvTotalSpots.setText(totalSpots != null ? String.valueOf(totalSpots) : "0");
                     tvWaitlist.setText(waitlistCount != null ? String.valueOf(waitlistCount) : "0");
                     tvConfirmed.setText(confirmedCount != null ? String.valueOf(confirmedCount) : "0");
@@ -138,8 +143,8 @@ public class EntrantEventDetailsFragment extends Fragment {
                                 .into(ivEventPoster);
                     }
 
-                    List<String> registeredIds = (List<String>) doc.get("registeredEntrantIds");
-                    if (registeredIds != null && registeredIds.contains(entrantId)) {
+                    List<String> waitlistedIds = (List<String>) doc.get("waitlistedEntrantIds");
+                    if (waitlistedIds != null && waitlistedIds.contains(entrantId)) {
                         isOnWaitlist = true;
                         setLeaveWaitlistStyle(btnJoin);
                     } else {
@@ -155,10 +160,12 @@ public class EntrantEventDetailsFragment extends Fragment {
     private void joinWaitlist(MaterialButton btnJoin) {
         btnJoin.setEnabled(false);
 
+        entrantService.signUpForEvent(entrantId, eventId);
+
         db.collection("events")
                 .document(eventId)
                 .update(
-                        "registeredEntrantIds", FieldValue.arrayUnion(entrantId),
+                        "waitlistedEntrantIds", FieldValue.arrayUnion(entrantId),
                         "waitlistCount", FieldValue.increment(1)
                 )
                 .addOnSuccessListener(unused ->
@@ -172,8 +179,10 @@ public class EntrantEventDetailsFragment extends Fragment {
                                     Toast.makeText(getContext(), "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
                                 })
                                 .addOnFailureListener(e -> {
+                                    isOnWaitlist = true;
+                                    setLeaveWaitlistStyle(btnJoin);
                                     btnJoin.setEnabled(true);
-                                    Toast.makeText(getContext(), "Joined event, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "Joined waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                 })
                 )
                 .addOnFailureListener(e -> {
@@ -188,7 +197,7 @@ public class EntrantEventDetailsFragment extends Fragment {
         db.collection("events")
                 .document(eventId)
                 .update(
-                        "registeredEntrantIds", FieldValue.arrayRemove(entrantId),
+                        "waitlistedEntrantIds", FieldValue.arrayRemove(entrantId),
                         "waitlistCount", FieldValue.increment(-1)
                 )
                 .addOnSuccessListener(unused ->
@@ -202,8 +211,10 @@ public class EntrantEventDetailsFragment extends Fragment {
                                     Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
                                 })
                                 .addOnFailureListener(e -> {
+                                    isOnWaitlist = false;
+                                    setJoinWaitlistStyle(btnJoin);
                                     btnJoin.setEnabled(true);
-                                    Toast.makeText(getContext(), "Left event, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(getContext(), "Left waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                 })
                 )
                 .addOnFailureListener(e -> {
@@ -222,5 +233,22 @@ public class EntrantEventDetailsFragment extends Fragment {
         btn.setBackgroundTintList(ColorStateList.valueOf(
                 ContextCompat.getColor(requireContext(), android.R.color.holo_red_light)
         ));
+    }
+
+    public void showStayInList(MaterialButton btnJoin) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Not Selected")
+                .setMessage("Stay in waiting list?")
+                .setPositiveButton("Yes", (dialog, which) ->
+                        waitlistService.stayInList(eventId, entrantId, new WaitlistCallback<Void>() {
+                            @Override
+                            public void onSuccess(Void r) {}
+
+                            @Override
+                            public void onError(Exception e) {}
+                        }))
+                .setNegativeButton("No", (dialog, which) -> leaveWaitlist(btnJoin))
+                .setCancelable(false)
+                .show();
     }
 }

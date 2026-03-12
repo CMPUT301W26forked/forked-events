@@ -120,7 +120,6 @@
                     android:orientation="horizontal"
                     app:layout_constraintTop_toBottomOf="@id/tvDescription">
 
-                    <!-- Total Spots -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -147,7 +146,6 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <!-- Waitlist Count -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -175,7 +173,6 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <!-- Confirmed Count -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -223,7 +220,6 @@
                     android:orientation="vertical"
                     app:layout_constraintTop_toBottomOf="@id/tvInfoTitle">
 
-                    <!-- Dates -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -260,7 +256,6 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Location -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -297,7 +292,6 @@
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Organizer -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -329,43 +323,6 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="West Side Community Centre"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Age Range -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_filter" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Age Range"
-                                android:textColor="@color/black"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tvAgeRange"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="6-10 years"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="12sp" />
                         </LinearLayout>

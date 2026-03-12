@@ -10,11 +10,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.lottery.Common.Utils.DeviceManager;
 import com.example.lottery.Entrant.Activity.EntrantEventsFragment;
 import com.example.lottery.Entrant.Activity.EntrantInvitationsFragment;
 import com.example.lottery.Entrant.Activity.LoginActivity;
-import com.example.lottery.Entrant.Repo.EntrantRepository;
+import com.example.lottery.Entrant.Activity.ProfileFragment;
+import com.example.lottery.Entrant.Activity.QrScannerFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -29,14 +29,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
-        }
-
-        // Only create entrant profile for non-guest users
-        boolean isGuest = getIntent().getBooleanExtra("isGuest", false);
-        if (!isGuest) {
-            String entrantId = DeviceManager.getDeviceId(this);
-            EntrantRepository entrantRepository = new EntrantRepository();
-            entrantRepository.createEntrantIfNotExists(entrantId);
         }
 
         EdgeToEdge.enable(this);

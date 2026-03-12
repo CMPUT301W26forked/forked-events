@@ -1,4 +1,4 @@
-package com.example.lottery;
+package com.example.lottery.Entrant.Activity;
 
 import android.content.res.ColorStateList;
 import android.graphics.Color;
@@ -9,8 +9,10 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.lottery.Event;
+import com.example.lottery.R;
 
 import java.util.List;
 

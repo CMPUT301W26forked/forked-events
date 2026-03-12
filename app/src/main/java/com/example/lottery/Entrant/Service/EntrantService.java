@@ -2,6 +2,10 @@ package com.example.lottery.Entrant.Service;
 
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class EntrantService {
 
@@ -12,9 +16,12 @@ public class EntrantService {
     }
 
     public void signUpForEvent(String entrantId, String eventId) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("registeredEventIds", FieldValue.arrayUnion(eventId));
+
         db.collection("users")
                 .document(entrantId)
-                .update("registeredEventIds", FieldValue.arrayUnion(eventId));
+                .set(data, SetOptions.merge());
     }
 
     public void acceptInvitation(String eventId, String entrantId) {

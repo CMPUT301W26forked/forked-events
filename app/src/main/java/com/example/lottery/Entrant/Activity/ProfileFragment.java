@@ -1,6 +1,7 @@
-package com.example.lottery;
+package com.example.lottery.Entrant.Activity;
 
 import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -10,23 +11,20 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.content.Intent;
 
-import com.example.lottery.Entrant.Activity.EntrantEventsFragment;
-import com.example.lottery.Entrant.Activity.LoginActivity;
+import com.example.lottery.Event;
+import com.example.lottery.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.lottery.Entrant.Activity.EntrantEventDetailsFragment;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,6 +41,7 @@ public class ProfileFragment extends Fragment {
 
     private TextView tvProfileName, tvProfileEmail, tvProfilePhone;
     private Button btnEditDetails;
+    private Button btnLogout;
 
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
@@ -52,7 +51,6 @@ public class ProfileFragment extends Fragment {
     private String currentName = "";
     private String currentEmail = "";
     private String currentPhone = "";
-    private Button btnLogout;
 
     @Nullable
     @Override
@@ -78,12 +76,12 @@ public class ProfileFragment extends Fragment {
         tvProfileEmail = view.findViewById(R.id.tvProfileEmail);
         tvProfilePhone = view.findViewById(R.id.tvProfilePhone);
         btnEditDetails = view.findViewById(R.id.btnEditDetails);
+        btnLogout = view.findViewById(R.id.btnLogout);
 
         recyclerView = view.findViewById(R.id.rvMyEvents);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new MyEventsAdapter(myEvents, this::openEventDetails);
         recyclerView.setAdapter(adapter);
-        btnLogout = view.findViewById(R.id.btnLogout);
 
         btnLogout.setOnClickListener(v -> logoutUser());
 
@@ -130,6 +128,7 @@ public class ProfileFragment extends Fragment {
                 })
                 .show();
     }
+
     private void loadUserProfile() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
@@ -175,14 +174,13 @@ public class ProfileFragment extends Fragment {
                     if (TextUtils.isEmpty(currentEmail)) currentEmail = "No email";
 
                     updateProfileUI();
-
-                    // show edit button for BOTH guest and logged-in users
                     btnEditDetails.setVisibility(View.VISIBLE);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(), "Failed to load profile", Toast.LENGTH_SHORT).show()
                 );
     }
+
     private void updateProfileUI() {
         tvProfileName.setText(currentName);
         tvProfileEmail.setText(currentEmail);
@@ -346,13 +344,13 @@ public class ProfileFragment extends Fragment {
             date = sdf.format(start) + " - " + sdf.format(end);
         }
 
-        List<String> registeredEntrantIds = (List<String>) doc.get("registeredEntrantIds");
+        List<String> waitlistedEntrantIds = (List<String>) doc.get("waitlistedEntrantIds");
         List<String> confirmedEntrantIds = (List<String>) doc.get("confirmedEntrantIds");
 
         String status;
         if (confirmedEntrantIds != null && confirmedEntrantIds.contains(userId)) {
             status = "Upcoming";
-        } else if (registeredEntrantIds != null && registeredEntrantIds.contains(userId)) {
+        } else if (waitlistedEntrantIds != null && waitlistedEntrantIds.contains(userId)) {
             status = "Waitlisted";
         } else {
             return null;

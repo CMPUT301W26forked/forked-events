@@ -1,4 +1,4 @@
-package com.example.lottery;
+package com.example.lottery.Entrant.Activity;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -15,7 +15,8 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.lottery.Entrant.Activity.EntrantEventsFragment;
+import com.example.lottery.Event;
+import com.example.lottery.R;
 import com.journeyapps.barcodescanner.DecoratedBarcodeView;
 
 import java.util.ArrayList;
@@ -160,7 +161,7 @@ public class QrScannerFragment extends Fragment {
         bundle.putString("lotteryInfo", event.getWaitlistInfo());
         bundle.putString("joinedInfo", event.getJoinedCount());
 
-        QrEventDetailsFragment fragment = new QrEventDetailsFragment();
+        com.example.lottery.Entrant.Activity.QrEventDetailsFragment fragment = new QrEventDetailsFragment();
         fragment.setArguments(bundle);
 
         requireActivity().getSupportFragmentManager()

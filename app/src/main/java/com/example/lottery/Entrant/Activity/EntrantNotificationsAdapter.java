@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.lottery.Entrant.Model.EntrantInvitation;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -66,12 +67,23 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                     .document(invitation.getInvitationId())
                     .update("status", "ACCEPTED")
                     .addOnSuccessListener(unused -> {
-                        holder.tvNotificationStatus.setText("ACCEPTED");
-                        Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(context, "Failed to accept invitation", Toast.LENGTH_SHORT).show()
-                    );
+                        // 1. Update status in subcollection to CONFIRMED
+                        db.collection("events").document(invitation.getEventId())
+                                .collection("entrants").document(invitation.getEntrantId())
+                                .update("status", "CONFIRMED")
+                                .addOnSuccessListener(aVoid -> {
+                                    // 2. Add to registeredEntrantIds array (Final List)
+                                    // Also remove from pendingEntrantIds array
+                                    db.collection("events").document(invitation.getEventId())
+                                            .update("registeredEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()),
+                                                    "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                                    "confirmedCount", FieldValue.increment(1))
+                                            .addOnSuccessListener(v2 -> {
+                                                holder.tvNotificationStatus.setText("ACCEPTED");
+                                                Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
+                                            });
+                                });
+                    });
         });
 
         holder.btnDecline.setOnClickListener(v -> {
@@ -79,12 +91,21 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                     .document(invitation.getInvitationId())
                     .update("status", "DECLINED")
                     .addOnSuccessListener(unused -> {
-                        holder.tvNotificationStatus.setText("DECLINED");
-                        Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e ->
-                            Toast.makeText(context, "Failed to decline invitation", Toast.LENGTH_SHORT).show()
-                    );
+                        // 1. Update subcollection status to CANCELLED
+                        db.collection("events").document(invitation.getEventId())
+                                .collection("entrants").document(invitation.getEntrantId())
+                                .update("status", "CANCELLED")
+                                .addOnSuccessListener(aVoid -> {
+                                    // 2. Remove from pending and add to cancelled array
+                                    db.collection("events").document(invitation.getEventId())
+                                            .update("pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                                    "cancelledEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()))
+                                            .addOnSuccessListener(v2 -> {
+                                                holder.tvNotificationStatus.setText("DECLINED");
+                                                Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
+                                            });
+                                });
+                    });
         });
 
         holder.btnViewDetails.setOnClickListener(v -> {

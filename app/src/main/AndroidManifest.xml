@@ -5,7 +5,11 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:allowBackup="true"
@@ -16,7 +20,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Lottery">
-
 
         <activity
             android:name=".Entrant.Activity.LoginActivity"
@@ -32,6 +35,5 @@
             android:exported="false" />
 
     </application>
-    <uses-permission android:name="android.permission.CAMERA" />
 
 </manifest>

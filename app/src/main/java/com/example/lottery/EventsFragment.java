@@ -1,6 +1,7 @@
 package com.example.lottery;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,14 +10,18 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
 public class EventsFragment extends Fragment {
 
+    private static final String TAG = "EventsFragment";
     private RecyclerView recyclerView;
     private EventAdapter adapter;
     private List<Event> eventList;
+    private FirebaseFirestore db;
 
     @Nullable
     @Override
@@ -27,31 +32,33 @@ public class EventsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         eventList = new ArrayList<>();
-        // sample
-        eventList.add(new Event(
-                "Swimming Lessons - Kids",
-                "Open",
-                "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
-                "West Side Pool",
-                "3/14/2026 - 5/14/2026",
-                "20 spots available",
-                "Waitlist Open\ncloses 2/16/2026",
-                "47 Joined"
-        ));
-        eventList.add(new Event(
-                "Adult Basketball League",
-                "Lottery Pending",
-                "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
-                "City Gym",
-                "4/01/2026 - 6/01/2026",
-                "10 spots available",
-                "Lottery closes\n3/01/2026",
-                "12 Joined"
-        ));
+        db = FirebaseFirestore.getInstance();
 
-        adapter = new EventAdapter(eventList, event -> {});
+        adapter = new EventAdapter(eventList, event -> {
+            // Handle event click if needed
+        });
         recyclerView.setAdapter(adapter);
 
+        fetchEventsFromFirestore();
+
         return view;
+    }
+
+    private void fetchEventsFromFirestore() {
+        db.collection("events")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        eventList.clear();
+                        for (QueryDocumentSnapshot document : task.getResult()) {
+                            Event event = document.toObject(Event.class);
+                            event.setEventId(document.getId());
+                            eventList.add(event);
+                        }
+                        adapter.notifyDataSetChanged();
+                    } else {
+                        Log.e(TAG, "Error getting documents: ", task.getException());
+                    }
+                });
     }
 }

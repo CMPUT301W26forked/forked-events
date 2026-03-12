@@ -1,7 +1,9 @@
 package com.example.lottery.Entrant.Activity;
 
 import android.content.Intent;
+import android.graphics.Paint;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -13,12 +15,12 @@ import com.example.lottery.MainActivity;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import android.graphics.Paint;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -38,22 +40,22 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         mAuth = FirebaseAuth.getInstance();
-        db    = FirebaseFirestore.getInstance();
+        db = FirebaseFirestore.getInstance();
 
-
+        // Check if user is already logged in
         if (mAuth.getCurrentUser() != null) {
             navigateToMain(mAuth.getCurrentUser().isAnonymous());
             return;
         }
 
-        tabLogin         = findViewById(R.id.tabLogin);
-        tabSignup        = findViewById(R.id.tabSignup);
-        labelName        = findViewById(R.id.labelName);
-        etName           = findViewById(R.id.etName);
-        etEmail          = findViewById(R.id.etEmail);
-        etPassword       = findViewById(R.id.etPassword);
-        btnPrimary       = findViewById(R.id.btnPrimary);
-        btnGuest         = findViewById(R.id.btnGuest);
+        tabLogin = findViewById(R.id.tabLogin);
+        tabSignup = findViewById(R.id.tabSignup);
+        labelName = findViewById(R.id.labelName);
+        etName = findViewById(R.id.etName);
+        etEmail = findViewById(R.id.etEmail);
+        etPassword = findViewById(R.id.etPassword);
+        btnPrimary = findViewById(R.id.btnPrimary);
+        btnGuest = findViewById(R.id.btnGuest);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
 
         tvForgotPassword.setPaintFlags(tvForgotPassword.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
@@ -97,8 +99,6 @@ public class LoginActivity extends AppCompatActivity {
         etPassword.setText("");
     }
 
-    // ─── Email/Password Login ───────────────────────────────────────────────
-
     private void handleLogin() {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
@@ -138,11 +138,9 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    // ─── Email/Password Sign-up ─────────────────────────────────────────────
-
     private void handleSignup() {
-        String name     = etName.getText().toString().trim();
-        String email    = etEmail.getText().toString().trim();
+        String name = etName.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
         if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
@@ -160,7 +158,7 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
                     String uid = authResult.getUser().getUid();
-                    saveUserToFirestore(uid, name, email, "entrant", false);
+                    saveUserToFirestore(uid, name, email, "entrant", false, null);
                 })
                 .addOnFailureListener(e -> {
                     btnPrimary.setEnabled(true);
@@ -168,43 +166,66 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    // ─── Device / Guest Login ───────────────────────────────────────────────
-
     private void handleDeviceLogin() {
         btnGuest.setEnabled(false);
+        String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
 
-        mAuth.signInAnonymously()
-                .addOnSuccessListener(authResult -> {
-                    String uid = authResult.getUser().getUid();
+        db.collection("users")
+                .whereEqualTo("deviceId", deviceId)
+                .whereEqualTo("isGuest", true)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    mAuth.signInAnonymously()
+                            .addOnSuccessListener(authResult -> {
+                                String newUid = authResult.getUser().getUid();
 
-                    DocumentReference userRef = db.collection("users").document(uid);
-                    userRef.get().addOnSuccessListener(snapshot -> {
-                        if (!snapshot.exists()) {
-                            // First time on this device - create guest profile
-                            saveUserToFirestore(uid, "Guest", null, "guest", true);
-                        } else {
-                            // Returning device user
-                            navigateToMain(true);
-                        }
-                    });
+                                if (!queryDocumentSnapshots.isEmpty()) {
+                                    DocumentSnapshot oldDoc = queryDocumentSnapshots.getDocuments().get(0);
+                                    String oldUid = oldDoc.getId();
+
+                                    if (!oldUid.equals(newUid)) {
+                                        Map<String, Object> data = oldDoc.getData();
+                                        if (data == null) data = new HashMap<>();
+                                        data.put("uid", newUid);
+                                        data.put("deviceId", deviceId);
+
+                                        db.collection("users").document(newUid).set(data)
+                                                .addOnSuccessListener(v -> {
+                                                    db.collection("users").document(oldUid).delete();
+                                                    navigateToMain(true);
+                                                })
+                                                .addOnFailureListener(e -> navigateToMain(true));
+                                    } else {
+                                        navigateToMain(true);
+                                    }
+                                } else {
+                                    saveUserToFirestore(newUid, "Guest", null, "guest", true, deviceId);
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                btnGuest.setEnabled(true);
+                                Toast.makeText(this, "Auth failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
                     btnGuest.setEnabled(true);
-                    Toast.makeText(this, "Device login failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Error checking device: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
-    // ─── Save User Profile to Firestore ────────────────────────────────────
-
     private void saveUserToFirestore(String uid, String name, String email,
-                                     String role, boolean isGuest) {
+                                     String role, boolean isGuest, String deviceId) {
         Map<String, Object> userProfile = new HashMap<>();
         userProfile.put("uid", uid);
         userProfile.put("name", name);
         userProfile.put("role", role);
         userProfile.put("isGuest", isGuest);
         userProfile.put("phone", "");
-        userProfile.put("registeredEventIds", new java.util.ArrayList<String>());
+        userProfile.put("registeredEventIds", new ArrayList<String>());
+
+        if (deviceId != null) {
+            userProfile.put("deviceId", deviceId);
+        }
 
         if (email != null) {
             userProfile.put("email", email);
@@ -228,8 +249,6 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
-    // ─── Forgot Password ────────────────────────────────────────────────────
-
     private void handleForgotPassword() {
         String email = etEmail.getText().toString().trim();
 
@@ -246,8 +265,6 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
     }
-
-    // ─── Navigation ─────────────────────────────────────────────────────────
 
     private void navigateToMain(boolean isGuest) {
         Intent intent = new Intent(this, MainActivity.class);
