@@ -19,6 +19,10 @@ import com.example.lottery.organizer.PosterStorageService;
 import com.example.lottery.organizer.RepoCallback;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * Organizer event management page
+ * Allows organizer sampling entrants with status WAITING (notify if selected)
+ */
 public class EventManagementFragment extends Fragment {
 
     private String eventId = "test_event";
@@ -43,6 +47,9 @@ public class EventManagementFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Let organizer inputs the number of entrants to be selected
+     */
     private void showSampleSizeDiaglog() {
         EditText input = new EditText(requireContext());
         input.setInputType(InputType.TYPE_CLASS_NUMBER);

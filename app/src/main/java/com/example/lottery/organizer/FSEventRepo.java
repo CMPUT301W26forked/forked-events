@@ -12,11 +12,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * FS implementation of EventRepo
+ * handles event interactions with FS
+ */
 public class FSEventRepo implements EventRepo{
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private DocumentReference ref(String eventId) {
         return db.collection("events").document(eventId);
     }
+
+    /**
+     * reads single event document by eventId
+     * @param eventId
+     * @param cb
+     */
     @Override
     public void getEvent(String eventId, RepoCallback<DocumentSnapshot> cb) {
         ref(eventId).get()
@@ -24,17 +34,31 @@ public class FSEventRepo implements EventRepo{
                 .addOnFailureListener(cb::onError);
     }
 
+    /**
+     * stores registration timestamps in event document
+     * @param eventId
+     * @param start
+     * @param end
+     * @param cb
+     */
     @Override
     public void setRegStartPeriod(String eventId, Timestamp start, Timestamp end, RepoCallback<Void> cb) {
         Map<String, Object> map = new HashMap<>();
         map.put("registrationStart", start);
         map.put("registrationEnd", end);
 
+        // prevent overwriting
         ref(eventId).set(map, SetOptions.merge())
                 .addOnSuccessListener(v -> cb.onSuccess(null))
                 .addOnFailureListener(cb::onError);
     }
 
+    /**
+     * stores poster URI in event document
+     * @param eventId
+     * @param posterUri
+     * @param cb
+     */
     @Override
     public void setPosterUrl(String eventId, String posterUri, RepoCallback<Void> cb) {
         Map<String, Object> map = new HashMap<>();
@@ -45,6 +69,11 @@ public class FSEventRepo implements EventRepo{
                 .addOnFailureListener(cb::onError);
     }
 
+    /**
+     * retrieves IDs of entrants with status WAITING for event
+     * @param eventId
+     * @param cb
+     */
     @Override
     public void getWaitingEntrantIds(String eventId, RepoCallback<List<String>> cb) {
         db.collection("events")
@@ -63,6 +92,12 @@ public class FSEventRepo implements EventRepo{
                 .addOnFailureListener(cb::onError);
     }
 
+    /**
+     *marks selected entrats' status as SELECTED
+     * @param eventId
+     * @param entrantId
+     * @param cb
+     */
     @Override
     public void markEntrantSelected(String eventId, String entrantId, RepoCallback<Void> cb) {
         db.collection("events")
@@ -74,6 +109,13 @@ public class FSEventRepo implements EventRepo{
                 .addOnFailureListener(cb::onError);
     }
 
+    /**
+     * create notifications for entrants
+     * @param eventId
+     * @param entrantId
+     * @param message
+     * @param cb
+     */
     @Override
     public void createNotification(String eventId, String entrantId, String message, RepoCallback<Void> cb) {
         Map<String, Object> notification = new HashMap<>();
@@ -85,7 +127,14 @@ public class FSEventRepo implements EventRepo{
 
         db.collection("notifications")
                 .add(notification)
-                .addOnSuccessListener(doc -> cb.onSuccess(null))
+                .addOnSuccessListener(doc -> {
+                    db.collection("entrants")
+                            .document(entrantId)
+                            .collection("notification")
+                            .add(notification)
+                            .addOnSuccessListener(subDoc -> cb.onSuccess(null))
+                            .addOnFailureListener(cb::onError);
+                })
                 .addOnFailureListener(cb::onError);
     }
 }

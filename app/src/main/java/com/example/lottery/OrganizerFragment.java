@@ -14,6 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Organizer dashboard fragment
+ * Display events and allow navigation
+ */
 public class OrganizerFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -36,6 +40,7 @@ public class OrganizerFragment extends Fragment {
         adapter = new OrganizerAdapter(organizerEvents, getParentFragmentManager());
         recyclerView.setAdapter(adapter);
 
+        // to event builder
         view.findViewById(R.id.btnCreateEvent).setOnClickListener(v -> {
             getParentFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, new EventBuilderFragment())
