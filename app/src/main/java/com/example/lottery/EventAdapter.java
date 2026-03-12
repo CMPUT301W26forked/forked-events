@@ -5,15 +5,23 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.List;
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     private List<Event> eventList;
+    private OnEventClickListener listener;
 
-    public EventAdapter(List<Event> eventList) {
+    public interface OnEventClickListener {
+        void onEventClick(Event event);
+    }
+
+    public EventAdapter(List<Event> eventList, OnEventClickListener listener) {
         this.eventList = eventList;
+        this.listener = listener;
     }
 
     @NonNull
@@ -25,7 +33,9 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
+
         Event event = eventList.get(position);
+
         holder.tvEventTitle.setText(event.getTitle());
         holder.tvStatus.setText(event.getStatus());
         holder.tvDescription.setText(event.getDescription());
@@ -34,6 +44,10 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.tvSpots.setText(event.getSpots());
         holder.tvWaitlist.setText(event.getWaitlistInfo());
         holder.tvJoined.setText(event.getJoinedCount());
+
+        holder.eventCard.setOnClickListener(v -> {
+            listener.onEventClick(event);
+        });
     }
 
     @Override
@@ -42,10 +56,15 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
+
+        CardView eventCard;
         TextView tvEventTitle, tvStatus, tvDescription, tvLocation, tvDate, tvSpots, tvWaitlist, tvJoined;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
+
+            eventCard = itemView.findViewById(R.id.eventCard);
+
             tvEventTitle = itemView.findViewById(R.id.tvEventTitle);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvDescription = itemView.findViewById(R.id.tvDescription);

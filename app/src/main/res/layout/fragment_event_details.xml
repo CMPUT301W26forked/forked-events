@@ -105,7 +105,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build confidence in the pool."
+                    android:text="Fun and safe swimming lessons for children aged 6-10."
                     android:textColor="@color/black"
                     android:textSize="14sp"
                     app:layout_constraintEnd_toEndOf="parent"
@@ -130,6 +130,7 @@
                         android:padding="12dp">
 
                         <TextView
+                            android:id="@+id/tvTotalSpots"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="20"
@@ -156,9 +157,10 @@
                         android:padding="12dp">
 
                         <TextView
+                            android:id="@+id/tvWaitlist"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="47"
+                            android:text="0"
                             android:textColor="#9575CD"
                             android:textSize="24sp"
                             android:textStyle="bold" />
@@ -181,6 +183,7 @@
                         android:padding="12dp">
 
                         <TextView
+                            android:id="@+id/tvConfirmed"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="0"
@@ -244,6 +247,7 @@
                                 android:textStyle="bold" />
 
                             <TextView
+                                android:id="@+id/tvEventDates"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="March 14, 2026 - May 14, 2026"
@@ -279,6 +283,7 @@
                                 android:textStyle="bold" />
 
                             <TextView
+                                android:id="@+id/tvLocation"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="West Side Pool"
@@ -314,44 +319,10 @@
                                 android:textStyle="bold" />
 
                             <TextView
+                                android:id="@+id/tvOrganizer"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="West Side Community Centre"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@drawable/ic_filter" />
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Age Range"
-                                android:textColor="@color/black"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="6-10 years"
                                 android:textColor="@color/text_secondary"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -383,7 +354,7 @@
                         android:layout_marginTop="8dp"
                         android:background="@color/lottery_text_bg"
                         android:padding="12dp"
-                        android:text="How it works: Join the waitlist during the open period. When registration closes, 24 participants will be randomly selected and notified."
+                        android:text="How it works: Join the waitlist during the open period. When registration closes, participants will be randomly selected and notified."
                         android:textColor="@color/black"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -401,6 +372,7 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     app:cornerRadius="12dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintTop_toBottomOf="@id/lotterySection" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
