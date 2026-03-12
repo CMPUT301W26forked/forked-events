@@ -26,8 +26,8 @@ public class EventManagementFragment extends Fragment {
         ImageButton btnBack = view.findViewById(R.id.btnBack);
         btnBack.setOnClickListener(v -> getParentFragmentManager().popBackStack());
 
-        CardView cardWaitlist = view.findViewById(R.id.cardWaitlist);
-        cardWaitlist.setOnClickListener(v -> {
+        CardView cardViewLists = view.findViewById(R.id.cardViewLists);
+        cardViewLists.setOnClickListener(v -> {
             WaitlistFragment fragment = new WaitlistFragment();
             Bundle args = new Bundle();
             args.putSerializable("event", event);
@@ -37,6 +37,11 @@ public class EventManagementFragment extends Fragment {
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit();
+        });
+
+        CardView cardSampleAttendees = view.findViewById(R.id.cardSampleAttendees);
+        cardSampleAttendees.setOnClickListener(v -> {
+            // Handle sample attendees
         });
         
         return view;
