@@ -50,6 +50,7 @@ public class EntrantEventDetailsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_event_details, container, false);
 
         ImageButton btnBack = view.findViewById(R.id.btnBack);
+        ImageButton btnShowQr = view.findViewById(R.id.btnShowQr);
         MaterialButton btnJoin = view.findViewById(R.id.btnJoin);
         TextView tvEventName = view.findViewById(R.id.tvEventName);
         TextView tvDescription = view.findViewById(R.id.tvDescription);
@@ -85,6 +86,19 @@ public class EntrantEventDetailsFragment extends Fragment {
         btnBack.setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager().popBackStack()
         );
+
+        btnShowQr.setOnClickListener(v -> {
+            if (eventId == null) return;
+            QrDisplayFragment fragment = new QrDisplayFragment();
+            Bundle args = new Bundle();
+            args.putString("eventId", eventId);
+            fragment.setArguments(args);
+
+            requireActivity().getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
 
         btnJoin.setOnClickListener(v -> {
             if (isOnWaitlist) {

@@ -2,12 +2,12 @@ package com.example.lottery;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
+import com.google.firebase.firestore.PropertyName;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 public class Event {
-
     private String eventId;
     private String title;
     private String status;
@@ -17,20 +17,19 @@ public class Event {
     private String spots;
     private String waitlistInfo;
     private String joinedCount;
-
-    // Firestore fields
+    
+    // Fields matching Firestore
     private String name;
     private long totalSpots;
-    private long waitlistCount;
+    private long waitListCount;
     private Timestamp registrationStart;
     private Timestamp registrationEnd;
 
     public Event() {
-        // Required empty constructor for Firestore
+        // Needed for Firestore
     }
 
-    public Event(String title, String status, String description, String location,
-                 String date, String spots, String waitlistInfo, String joinedCount) {
+    public Event(String title, String status, String description, String location, String date, String spots, String waitlistInfo, String joinedCount) {
         this.title = title;
         this.status = status;
         this.description = description;
@@ -122,7 +121,10 @@ public class Event {
 
     @Exclude
     public String getJoinedCount() {
-        return waitlistCount + " Joined";
+        if (waitListCount >= 0) {
+            return waitListCount + " Joined";
+        }
+        return joinedCount;
     }
 
     public void setJoinedCount(String joinedCount) {
@@ -145,12 +147,12 @@ public class Event {
         this.totalSpots = totalSpots;
     }
 
-    public long getWaitlistCount() {
-        return waitlistCount;
+    public long getWaitListCount() {
+        return waitListCount;
     }
 
-    public void setWaitlistCount(long waitlistCount) {
-        this.waitlistCount = waitlistCount;
+    public void setWaitListCount(long waitListCount) {
+        this.waitListCount = waitListCount;
     }
 
     public Timestamp getRegistrationStart() {
