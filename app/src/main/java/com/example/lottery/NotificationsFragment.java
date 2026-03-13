@@ -4,11 +4,18 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,12 +34,6 @@ public class NotificationsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         notificationList = new ArrayList<>();
-        // sample
-        notificationList.add(new Notification("You have successfully joined the event!", "Swimming Lessons - Beginner Kids", "March 14 – May 14, 2026", "Joined"));
-        notificationList.add(new Notification("You are currently on the waitlist.", "Swimming Lessons - Beginner Kids", "March 14 – May 14, 2026", "Waitlisted"));
-        notificationList.add(new Notification("You're invited to an event!", "Swimming Lessons - Beginner Kids", "March 14 – May 14, 2026", "Invitation"));
-        notificationList.add(new Notification("You have been added to waitlist for the event!", "Adult Basketball League", "April 01 – June 01, 2026", "Waitlisted"));
-
         adapter = new NotificationsAdapter(notificationList);
         recyclerView.setAdapter(adapter);
 
@@ -40,6 +41,38 @@ public class NotificationsFragment extends Fragment {
             getParentFragmentManager().popBackStack();
         });
 
+        loadNotification();
+
         return view;
+    }
+
+    /**
+     * load notification
+     */
+    private void loadNotification() {
+        String curUid = FirebaseAuth.getInstance().getUid();
+        if (curUid == null) {
+            Toast.makeText(requireContext(), "Invalid login status", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(curUid)
+                .collection("notification")
+                .orderBy("createdAt")
+                .get()
+                .addOnSuccessListener(qs -> {
+                    notificationList.clear();
+
+                    for (QueryDocumentSnapshot doc : qs) {
+                        Notification notification = doc.toObject(Notification.class);
+                        notificationList.add(notification);
+                    }
+                    adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to load " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 }

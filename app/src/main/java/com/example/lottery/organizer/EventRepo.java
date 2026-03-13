@@ -17,5 +17,5 @@ public interface EventRepo {
     void linkEventToOrganizer(String userId, String eventId, String eventName, RepoCallback<Void> cb);
     void getWaitingEntrantIds(String eventId, RepoCallback<List<String>> cb);
     void markEntrantSelected(String eventId, String entrantId, RepoCallback<Void> cb);
-    void createNotification(String eventId, String entrantId, String message, RepoCallback<Void> cb);
+    void createNotification(String eventId, String entrantId, String eventName, String message, RepoCallback<Void> cb);
 }
