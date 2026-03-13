@@ -12,10 +12,10 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:backgroundTint="@color/white"
+        android:backgroundTint="@color/black"
         android:text="Back"
         android:textAllCaps="false"
-        android:textColor="@color/black"
+        android:textColor="@color/white"
         android:textStyle="bold"
         app:cornerRadius="12dp"
         app:layout_constraintStart_toStartOf="parent"
@@ -63,6 +63,40 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/etMessage" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelectSelected"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="@color/black"
+        android:text="ALL SELECTED"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:cornerRadius="12dp"
+        app:layout_constraintTop_toBottomOf="@+id/tvToLabel"
+        app:layout_constraintBottom_toTopOf="@+id/btnSelectCancelled"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelectCancelled"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="24dp"
+        android:backgroundTint="@color/black"
+        android:text="ALL CANCELLED"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:cornerRadius="12dp"
+        app:layout_constraintTop_toBottomOf="@+id/btnSelectSelected"
+        app:layout_constraintBottom_toTopOf="@+id/cvUserList"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
     <androidx.cardview.widget.CardView
         android:id="@+id/cvUserList"
         android:layout_width="0dp"
@@ -76,7 +110,8 @@
         app:layout_constraintBottom_toTopOf="@id/btnSend"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvToLabel">
+        app:layout_constraintTop_toBottomOf="@id/btnSelectCancelled"
+        >
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvUserSelection"
