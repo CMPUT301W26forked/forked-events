@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * repo interface
+ * repo interface.
  */
 public interface EventRepo {
     void getEvent(String eventId, RepoCallback<DocumentSnapshot> cb);

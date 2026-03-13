@@ -149,4 +149,69 @@ public class FSEventRepo implements EventRepo {
                     .addOnSuccessListener(subDoc -> cb.onSuccess(null))
                     .addOnFailureListener(cb::onError);
     }
+
+    /**
+     * get all pending entrant ids
+     * @param eventId
+     * @param cb
+     */
+    public void getPendingEntrantIds(String eventId, RepoCallback<List<String>> cb) {
+        ref(eventId).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        List<String> ids = (List<String>) doc.get("pendingEntrantIds");
+                        cb.onSuccess(ids != null ? ids : new ArrayList<>());
+                    } else {
+                        cb.onSuccess(new ArrayList<>());
+                    }
+                })
+                .addOnFailureListener(cb::onError);
+
+    }
+
+    /**
+     * send message to pending.
+     * @param eventId
+     * @param userIds
+     * @param message
+     * @param cb
+     */
+    public void sendMessageToPending(String eventId, List<String> userIds, String message, RepoCallback<Void> cb) {
+        if (userIds == null || userIds.isEmpty()) {
+            cb.onError(new IllegalArgumentException("No selected entrants"));
+            return;
+        }
+
+        final int total = userIds.size();
+        final int[] done = {0};
+        final boolean[] failed = {false};
+
+        for (String id : userIds) {
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("eventId", eventId);
+            notification.put("recipientUid", id);
+            notification.put("message", message);
+            notification.put("type", "MESSAGE");
+            notification.put("createdAt", Timestamp.now());
+            notification.put("isRead", false);
+            db.collection("users")
+                    .document(id)
+                    .collection("notification")
+                    .add(notification)
+                    .addOnSuccessListener(ref -> {
+                        if (failed[0]) return;
+                        done[0]++;
+                        if (done[0] == total) {
+                            cb.onSuccess(null);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        if (failed[0]) return;
+                        failed[0] = true;
+                        cb.onError(e);
+                    });
+
+        }
+    }
+
 }
