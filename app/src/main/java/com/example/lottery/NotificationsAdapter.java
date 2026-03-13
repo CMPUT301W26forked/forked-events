@@ -6,7 +6,12 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.firebase.Timestamp;
+
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.NotificationViewHolder> {
 
@@ -26,10 +31,16 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     @Override
     public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
         Notification notification = notificationList.get(position);
-        holder.tvTitle.setText(notification.getTitle());
+        holder.tvTitle.setText(notification.getMessage());
         holder.tvEvent.setText(notification.getEventName());
-        holder.tvDate.setText(notification.getDate());
-        holder.tvStatus.setText(notification.getStatus());
+        holder.tvDate.setText(formatTimeStamp(notification.getCreatedAt()));
+        holder.tvStatus.setText(notification.getType());
+
+        // for selected, *** rest type not implemented ***
+        if ("SELECTED".equalsIgnoreCase(notification.getType())) {
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
+        }
 
         if ("Joined".equalsIgnoreCase(notification.getStatus())) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
@@ -58,5 +69,11 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             tvDate = itemView.findViewById(R.id.tvNotificationDate);
             tvStatus = itemView.findViewById(R.id.tvNotificationStatus);
         }
+    }
+
+    private String formatTimeStamp(Timestamp timestamp) {
+        if (timestamp == null) return "";
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        return sdf.format(timestamp.toDate());
     }
 }
