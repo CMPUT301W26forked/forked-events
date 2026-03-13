@@ -1,6 +1,7 @@
 package com.example.lottery.Entrant.Activity;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,6 +9,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lottery.Entrant.Model.EntrantInvitation;
@@ -57,8 +59,19 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
     public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
         EntrantInvitation invitation = invitationList.get(position);
 
-        holder.tvNotificationTitle.setText("You have been invited to an event!");
-        holder.tvNotificationEvent.setText("Event ID: " + invitation.getEventId());
+        // Logic for "Waitlisted" status vs "Invitation/Selected" status
+        if ("WAITLISTED".equalsIgnoreCase(invitation.getStatus())) {
+            holder.tvNotificationTitle.setText("Waitlist Confirmation");
+            holder.tvNotificationEvent.setText("You joined the waitlist for Event ID: " + invitation.getEventId());
+            holder.btnAccept.setVisibility(View.GONE);
+            holder.btnDecline.setVisibility(View.GONE);
+        } else {
+            holder.tvNotificationTitle.setText("You have been invited to an event!");
+            holder.tvNotificationEvent.setText("Event ID: " + invitation.getEventId());
+            holder.btnAccept.setVisibility(View.VISIBLE);
+            holder.btnDecline.setVisibility(View.VISIBLE);
+        }
+        
         holder.tvNotificationDate.setText("Date unavailable");
         holder.tvNotificationStatus.setText(invitation.getStatus());
 
@@ -67,13 +80,10 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                     .document(invitation.getInvitationId())
                     .update("status", "ACCEPTED")
                     .addOnSuccessListener(unused -> {
-                        // 1. Update status in subcollection to CONFIRMED
                         db.collection("events").document(invitation.getEventId())
                                 .collection("entrants").document(invitation.getEntrantId())
                                 .update("status", "CONFIRMED")
                                 .addOnSuccessListener(aVoid -> {
-                                    // 2. Add to registeredEntrantIds array (Final List)
-                                    // Also remove from pendingEntrantIds array
                                     db.collection("events").document(invitation.getEventId())
                                             .update("registeredEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()),
                                                     "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
@@ -91,12 +101,10 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                     .document(invitation.getInvitationId())
                     .update("status", "DECLINED")
                     .addOnSuccessListener(unused -> {
-                        // 1. Update subcollection status to CANCELLED
                         db.collection("events").document(invitation.getEventId())
                                 .collection("entrants").document(invitation.getEntrantId())
                                 .update("status", "CANCELLED")
                                 .addOnSuccessListener(aVoid -> {
-                                    // 2. Remove from pending and add to cancelled array
                                     db.collection("events").document(invitation.getEventId())
                                             .update("pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
                                                     "cancelledEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()))
@@ -109,7 +117,17 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
         });
 
         holder.btnViewDetails.setOnClickListener(v -> {
-            Toast.makeText(context, "Open event details here", Toast.LENGTH_SHORT).show();
+            EntrantEventDetailsFragment fragment = new EntrantEventDetailsFragment();
+            Bundle args = new Bundle();
+            args.putString("eventId", invitation.getEventId());
+            fragment.setArguments(args);
+
+            if (context instanceof AppCompatActivity) {
+                ((AppCompatActivity) context).getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
         });
     }
 

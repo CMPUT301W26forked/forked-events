@@ -5,6 +5,7 @@ import com.google.firebase.Timestamp;
 public class Notification {
     private String title;
     private String eventName;
+    private String eventId;
     private String date;
     private String status;
     private String message;
@@ -15,16 +16,17 @@ public class Notification {
         // for FS
     }
 
-    public Notification(String title, String eventName, String date, String status) {
+    public Notification(String title, String eventName, String eventId, String date, String status) {
         this.title = title;
         this.eventName = eventName;
+        this.eventId = eventId;
         this.date = date;
         this.status = status;
-
     }
 
     public String getTitle() { return title; }
     public String getEventName() { return eventName; }
+    public String getEventId() { return eventId; }
     public String getDate() { return date; }
     public String getStatus() { return status; }
     public String getMessage() {return message;}

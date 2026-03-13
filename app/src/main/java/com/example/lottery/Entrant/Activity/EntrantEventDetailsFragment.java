@@ -21,6 +21,7 @@ import com.example.lottery.Entrant.Service.EntrantService;
 import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
@@ -28,12 +29,15 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class EntrantEventDetailsFragment extends Fragment {
 
     private String eventId;
+    private String eventName;
     private FirebaseFirestore db;
     private EntrantService entrantService;
     private boolean isOnWaitlist = false;
@@ -129,7 +133,8 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .addOnSuccessListener(doc -> {
                     if (!doc.exists()) return;
 
-                    tvEventName.setText(doc.getString("name"));
+                    eventName = doc.getString("name");
+                    tvEventName.setText(eventName);
                     tvDescription.setText(doc.getString("description"));
                     tvStatusTag.setText(doc.getString("status"));
                     if (doc.getString("status") != null) {
@@ -214,6 +219,7 @@ public class EntrantEventDetailsFragment extends Fragment {
                                     .document(entrantId)
                                     .update("registeredEventIds", FieldValue.arrayUnion(eventId))
                                     .addOnSuccessListener(unused2 -> {
+                                        createWaitlistNotification();
                                         isOnWaitlist = true;
                                         setLeaveWaitlistStyle(btnJoin);
                                         btnJoin.setEnabled(true);
@@ -231,6 +237,21 @@ public class EntrantEventDetailsFragment extends Fragment {
                         Toast.makeText(getContext(), "Failed to join waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         });
+    }
+
+    private void createWaitlistNotification() {
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("eventId", eventId);
+        notification.put("eventName", eventName);
+        notification.put("message", "You have joined the waitlist for " + eventName);
+        notification.put("type", "JOIN_WAITLIST");
+        notification.put("status", "WAITLISTED");
+        notification.put("createdAt", Timestamp.now());
+
+        db.collection("users")
+                .document(entrantId)
+                .collection("notification")
+                .add(notification);
     }
 
     /***
