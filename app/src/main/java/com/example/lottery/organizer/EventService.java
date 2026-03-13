@@ -1,11 +1,14 @@
 package com.example.lottery.organizer;
 
 import android.net.Uri;
+import android.provider.Settings;
 
 import com.example.lottery.organizer.EventRepo;
 import com.example.lottery.organizer.RepoCallback;
 import com.google.firebase.Timestamp;
 
+import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -122,13 +125,13 @@ public class EventService {
     }
 
     /**
-     * run lottery/sampling service by randomly selecting a specified number of waiting entrants
-     * selected entrants are marked as SELECTED
+     * run lottery/sampling service by randomly selecting a specified number of waitingEntrantIds
+     * selected entrants are moved to pendingEntrantIds
      * @param eventId
      * @param sampleSize
      * @param cb
      */
-    public void runLottery(String eventId, int sampleSize, RepoCallback<Void> cb) {
+    public void runLottery(String eventId, String eventName, int sampleSize, RepoCallback<Void> cb) {
         if (sampleSize <= 0) {
             cb.onError(new IllegalArgumentException("Illegal sample size"));
             return;
@@ -136,13 +139,15 @@ public class EventService {
 
         repo.getWaitingEntrantIds(eventId, new RepoCallback<List<String>>() {
             @Override
-            public void onSuccess(List<String> ids) {
-                if (ids.isEmpty()) {
+            public void onSuccess(List<String> rawIds) {
+                if (rawIds == null || rawIds.isEmpty()) {
                     cb.onError(new IllegalArgumentException("No waiting entrants"));
                     return;
                 }
+
+                List<String> ids = new ArrayList<>(rawIds);
                 // random select & value protection
-                Collections.shuffle(ids);
+                Collections.shuffle(ids, new SecureRandom());
                 int count = Math.min(sampleSize, ids.size());
 
                 if (count == 0) {
@@ -160,8 +165,10 @@ public class EventService {
                         @Override
                         public void onSuccess(Void result) {
                             // entrant will be notified if selected
-                            repo.createNotification(eventId,
+                            repo.createNotification(
+                                    eventId,
                                     entrantId,
+                                    eventName,
                                     "You have been selected for the event",
                                     new RepoCallback<Void>() {
                                         @Override

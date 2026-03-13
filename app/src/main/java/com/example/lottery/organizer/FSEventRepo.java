@@ -20,10 +20,20 @@ import java.util.Map;
 public class FSEventRepo implements EventRepo {
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+    /**
+     * get reference from FS
+     * @param eventId
+     * @return
+     */
     private DocumentReference ref(String eventId) {
         return db.collection("events").document(eventId);
     }
 
+    /**
+     * get event from FS
+     * @param eventId
+     * @param cb
+     */
     @Override
     public void getEvent(String eventId, RepoCallback<DocumentSnapshot> cb) {
         ref(eventId).get()
@@ -31,6 +41,13 @@ public class FSEventRepo implements EventRepo {
                 .addOnFailureListener(cb::onError);
     }
 
+    /**
+     * set RegistrationPeriod to FS
+     * @param eventId
+     * @param start
+     * @param end
+     * @param cb
+     */
     @Override
     public void setRegStartPeriod(String eventId, Timestamp start, Timestamp end, RepoCallback<Void> cb) {
         Map<String, Object> map = new HashMap<>();
@@ -42,6 +59,12 @@ public class FSEventRepo implements EventRepo {
                 .addOnFailureListener(cb::onError);
     }
 
+    /**
+     * set poster url to FS
+     * @param eventId
+     * @param posterUri
+     * @param cb
+     */
     @Override
     public void setPosterUrl(String eventId, String posterUri, RepoCallback<Void> cb) {
         Map<String, Object> map = new HashMap<>();
@@ -65,6 +88,11 @@ public class FSEventRepo implements EventRepo {
         cb.onSuccess(null);
     }
 
+    /**
+     * get waiting entrants from waitlist on FS
+     * @param eventId
+     * @param cb
+     */
     @Override
     public void getWaitingEntrantIds(String eventId, RepoCallback<List<String>> cb) {
         // Get IDs directly from the waitlistedEntrantIds array to ensure consistency with manual testing
@@ -78,53 +106,47 @@ public class FSEventRepo implements EventRepo {
         }).addOnFailureListener(cb::onError);
     }
 
+    /**
+     * remove selected entrant from waitlist to pending list
+     * @param eventId
+     * @param entrantId
+     * @param cb
+     */
     @Override
     public void markEntrantSelected(String eventId, String entrantId, RepoCallback<Void> cb) {
-        // 1. Update status in subcollection to SELECTED
-        db.collection("events")
-                .document(eventId)
-                .collection("entrants")
-                .document(entrantId)
-                .update("status", "SELECTED")
-                .addOnSuccessListener(v -> {
-                    // 2. Transition ID from waitlisted array to pendingEntrantIds array
-                    ref(eventId).update(
-                            "waitlistedEntrantIds", FieldValue.arrayRemove(entrantId),
-                            "pendingEntrantIds", FieldValue.arrayUnion(entrantId),
-                            "waitlistCount", FieldValue.increment(-1)
-                    ).addOnSuccessListener(unused -> cb.onSuccess(null))
-                     .addOnFailureListener(cb::onError);
-                })
-                .addOnFailureListener(e -> {
-                    // Even if subcollection update fails, try updating the arrays
-                    ref(eventId).update(
-                            "waitlistedEntrantIds", FieldValue.arrayRemove(entrantId),
-                            "pendingEntrantIds", FieldValue.arrayUnion(entrantId),
-                            "waitlistCount", FieldValue.increment(-1)
-                    ).addOnSuccessListener(unused -> cb.onSuccess(null))
-                     .addOnFailureListener(cb::onError);
-                });
+        // Transition ID from waitlisted array to pendingEntrantIds array
+        ref(eventId).update(
+                "waitlistedEntrantIds", FieldValue.arrayRemove(entrantId),
+                "pendingEntrantIds", FieldValue.arrayUnion(entrantId),
+                "waitlistCount", FieldValue.increment(-1)
+        ).addOnSuccessListener(unused -> cb.onSuccess(null))
+         .addOnFailureListener(cb::onError);
     }
 
+    /**
+     * create notification to selected/specified entrant
+     * @param eventId
+     * @param entrantId
+     * @param eventName
+     * @param message
+     * @param cb
+     */
     @Override
-    public void createNotification(String eventId, String entrantId, String message, RepoCallback<Void> cb) {
+    public void createNotification(String eventId, String entrantId, String eventName, String message, RepoCallback<Void> cb) {
         Map<String, Object> notification = new HashMap<>();
         notification.put("eventId", eventId);
+        notification.put("eventName", eventName);
         notification.put("entrantId", entrantId);
         notification.put("message", message);
         notification.put("type", "SELECTED");
         notification.put("createdAt", com.google.firebase.Timestamp.now());
+        notification.put("isRead", false);
 
-        db.collection("notifications")
-                .add(notification)
-                .addOnSuccessListener(doc -> {
-                    db.collection("users")
-                            .document(entrantId)
-                            .collection("notification")
-                            .add(notification)
-                            .addOnSuccessListener(subDoc -> cb.onSuccess(null))
-                            .addOnFailureListener(cb::onError);
-                })
-                .addOnFailureListener(cb::onError);
+        db.collection("users")
+                    .document(entrantId)
+                    .collection("notification")
+                    .add(notification)
+                    .addOnSuccessListener(subDoc -> cb.onSuccess(null))
+                    .addOnFailureListener(cb::onError);
     }
 }

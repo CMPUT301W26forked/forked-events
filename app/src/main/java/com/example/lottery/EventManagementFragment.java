@@ -18,6 +18,7 @@ import com.example.lottery.organizer.EventService;
 import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.PosterStorageService;
 import com.example.lottery.organizer.RepoCallback;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 /**
  * Organizer event management page
@@ -29,19 +30,21 @@ public class EventManagementFragment extends Fragment {
     private String eventName = "Event";
     private FSEventRepo repo;
     private EventService service;
+    private long waitlistCount = 0;
+    private long waitlistLimit = 0;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_event_management, container, false);
 
+        repo = new FSEventRepo();
+        service = new EventService(repo, new PosterStorageService());
         if (getArguments() != null) {
             eventId = getArguments().getString("event_id", "test_event");
             eventName = getArguments().getString("event_name", "Event");
         }
-
-        repo = new FSEventRepo();
-        service = new EventService(repo, new PosterStorageService());
+        loadWaitinglistInfo();
 
         // Back button
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
@@ -70,7 +73,7 @@ public class EventManagementFragment extends Fragment {
     private void showSampleSizeDiaglog() {
         EditText input = new EditText(requireContext());
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
-        input.setHint("Enter sample size");
+        input.setHint("Current waitlist: " + waitlistCount + " / " + waitlistLimit);
 
         new AlertDialog.Builder(requireContext())
                 .setTitle("Sample Size")
@@ -83,7 +86,7 @@ public class EventManagementFragment extends Fragment {
                     }
                     int sampleSize = Integer.parseInt(text);
 
-                    service.runLottery(eventId, sampleSize, new RepoCallback<Void>() {
+                    service.runLottery(eventId, eventName, sampleSize, new RepoCallback<Void>() {
                         @Override
                         public void onSuccess(Void result) {
                             Toast.makeText(requireContext(), "Lottery completed", Toast.LENGTH_SHORT).show();
@@ -97,5 +100,28 @@ public class EventManagementFragment extends Fragment {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    /**
+     * loading waitlist info for hint
+     */
+    private void loadWaitinglistInfo() {
+        repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot doc) {
+                if (doc != null && doc.exists()) {
+                    Long count = doc.getLong("waitlistCount");
+                    Long limit = doc.getLong("waitListLimit");
+                    waitlistCount = count != null ? count : 0;
+                    waitlistLimit = limit != null ? limit : 0;
+                }
+            }
+
+            @Override
+            public void onError(Exception e) {
+                waitlistLimit = 0;
+                waitlistCount = 0;
+            }
+        });
     }
 }
