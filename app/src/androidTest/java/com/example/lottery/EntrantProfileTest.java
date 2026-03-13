@@ -1,20 +1,10 @@
 package com.example.lottery;
 
-import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.Visibility.GONE;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
-import android.os.Bundle;
-
-import androidx.fragment.app.testing.FragmentScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.example.lottery.Entrant.Activity.QrEventDetailsFragment;
-import com.example.lottery.Entrant.Activity.QrScannerFragment;
 import com.example.lottery.Entrant.Model.EntrantProfile;
 
 import org.junit.Test;
@@ -23,7 +13,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 
 @RunWith(AndroidJUnit4.class)
-public class atest {
+public class EntrantProfileTest {
 
     //@Test
     //public void qrEventDetails_displaysPassedBundleData() {
@@ -99,5 +89,73 @@ public class atest {
         org.junit.Assert.assertEquals("test@email.com", profile.getEmail());
         org.junit.Assert.assertEquals("9999999999", profile.getPhone());
         org.junit.Assert.assertEquals("event123", profile.getRegisteredEventIds().get(0));
+    }
+
+    @Test
+    public void entrantProfile_emptyConstructor_hasDefaultValues() {
+        EntrantProfile profile = new EntrantProfile();
+
+        org.junit.Assert.assertNull(profile.getId());
+        org.junit.Assert.assertNull(profile.getName());
+        org.junit.Assert.assertNull(profile.getEmail());
+        org.junit.Assert.assertNull(profile.getPhone());
+        org.junit.Assert.assertNull(profile.getRegisteredEventIds());
+    }
+
+    @Test
+    public void entrantProfile_emptyEventList_storesCorrectly() {
+        ArrayList<String> eventIds = new ArrayList<>();
+
+        EntrantProfile profile = new EntrantProfile(
+                "u3",
+                "Empty User",
+                "empty@email.com",
+                "1111111111",
+                eventIds
+        );
+
+        org.junit.Assert.assertNotNull(profile.getRegisteredEventIds());
+        org.junit.Assert.assertEquals(0, profile.getRegisteredEventIds().size());
+    }
+
+    @Test
+    public void entrantProfile_nullEventList_worksCorrectly() {
+        EntrantProfile profile = new EntrantProfile(
+                "u4",
+                "Null User",
+                "null@email.com",
+                "2222222222",
+                null
+        );
+
+        org.junit.Assert.assertNull(profile.getRegisteredEventIds());
+    }
+
+    @Test
+    public void entrantProfile_updateRegisteredEvents_replacesOldValues() {
+        EntrantProfile profile = new EntrantProfile();
+
+        ArrayList<String> firstList = new ArrayList<>();
+        firstList.add("event1");
+
+        ArrayList<String> secondList = new ArrayList<>();
+        secondList.add("event2");
+        secondList.add("event3");
+
+        profile.setRegisteredEventIds(firstList);
+        profile.setRegisteredEventIds(secondList);
+
+        org.junit.Assert.assertEquals(2, profile.getRegisteredEventIds().size());
+        org.junit.Assert.assertEquals("event2", profile.getRegisteredEventIds().get(0));
+    }
+
+    @Test
+    public void entrantProfile_longStrings_storeCorrectly() {
+        String longName = "VeryLongNameForTestingProfileStorage";
+
+        EntrantProfile profile = new EntrantProfile();
+        profile.setName(longName);
+
+        org.junit.Assert.assertEquals(longName, profile.getName());
     }
 }
