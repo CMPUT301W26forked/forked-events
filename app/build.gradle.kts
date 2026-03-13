@@ -37,7 +37,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation(libs.fragment.testing)
+    debugImplementation("androidx.fragment:fragment-testing:1.8.6")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
