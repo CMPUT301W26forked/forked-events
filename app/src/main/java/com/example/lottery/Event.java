@@ -20,15 +20,16 @@ public class Event {
     private String waitlistInfo;
     private String joinedCount;
 
-    // Fields matching Firestore
+    // fields matching firestore
     private String name;
     private long totalSpots;
-    private long waitListCount;
+    private long waitListCount = -1;
     private Timestamp registrationStart;
     private Timestamp registrationEnd;
 
+
     public Event() {
-        // Needed for Firestore
+
     }
 
     /**
