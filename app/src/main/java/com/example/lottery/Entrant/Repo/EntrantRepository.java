@@ -7,6 +7,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Repository class that manages entrant data in Firestore.
+ * <p>
+ * Acts as a data access layer for entrant-related operations,
+ * including creating new entrant profiles if they do not already
+ * exist in the "users" collection.
+ * </p>
+ */
 public class EntrantRepository {
 
     private final FirebaseFirestore db;
@@ -19,6 +27,17 @@ public class EntrantRepository {
         return db;
     }
 
+    /**
+     * Creates a new entrant profile in Firestore if one does not already exist.
+     * <p>
+     * Checks the "users" collection for a document matching the given entrant ID.
+     * If no document is found, a new profile is created with default empty values
+     * for name, email, and phone, an empty list of registered event IDs, and the
+     * role set to "entrant".
+     * </p>
+     *
+     * @param entrantId the Firebase UID of the entrant to check or create
+     */
     public void createEntrantIfNotExists(String entrantId) {
         db.collection("users")
                 .document(entrantId)

@@ -18,6 +18,15 @@ import com.example.lottery.Entrant.Activity.QrScannerFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
+/**
+ * The main entry point of the application after authentication.
+ * <p>
+ * On launch, verifies that a user is authenticated via Firebase. If no
+ * authenticated user is found, redirects to LoginActivity and finishes.
+ * Otherwise, sets up the bottom navigation bar and manages fragment
+ * switching between the app's main sections.
+ * </p>
+ */
 public class MainActivity extends AppCompatActivity {
 
     @Override

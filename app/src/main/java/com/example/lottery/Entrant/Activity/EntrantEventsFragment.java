@@ -18,6 +18,15 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
+/**
+ * Fragment that displays a list of all available lottery events.
+ * <p>
+ * Fetches events from Firestore on load and presents them in a
+ * scrollable list. Tapping an event navigates to
+ * EntrantEventDetailsFragment for that event.
+ * </p>
+ */
+
 public class EntrantEventsFragment extends Fragment {
 
     private RecyclerView rvEvents;
@@ -27,6 +36,16 @@ public class EntrantEventsFragment extends Fragment {
 
     public EntrantEventsFragment() {
     }
+
+    /**
+     * Inflates the fragment layout, sets up the RecyclerView and adapter,
+     * and triggers the initial load of events from Firestore.
+     *
+     * @param inflater  the LayoutInflater used to inflate the fragment view
+     * @param container the parent view that the fragment UI should attach to
+     * @param savedInstanceState previously saved state, or null if none exists
+     * @return the inflated root view for this fragment
+     */
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -61,6 +80,15 @@ public class EntrantEventsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Fetches all events from the Firestore "events" collection and
+     * populates the RecyclerView.
+     * <p>
+     * On success, clears the current event list, maps each Firestore
+     * document to an Event object, and notifies the adapter of the update.
+     * On failure, displays a toast message to the user.
+     * </p>
+     */
     private void loadEvents() {
         db.collection("events")
                 .get()

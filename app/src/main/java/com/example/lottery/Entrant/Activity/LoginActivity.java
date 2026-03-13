@@ -22,6 +22,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Activity that handles user authentication, including login, sign-up,
+ * guest access, and password reset.
+ * <p>
+ * On launch, if a user is already authenticated via Firebase, they are
+ * redirected immediately to MainActivity. Otherwise, the user may sign in
+ * with email and password, create a new account, continue as a guest using
+ * their device ID, or request a password reset email.
+ * </p>
+ */
 public class LoginActivity extends AppCompatActivity {
 
     private TextView tabLogin, tabSignup, tvForgotPassword;
@@ -34,6 +44,12 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
 
+    /**
+     * Initializes the activity, checks for an existing authenticated session,
+     * and sets up UI components and click listeners.
+     *
+     * @param savedInstanceState previously saved state, or null if none exists
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +91,15 @@ public class LoginActivity extends AppCompatActivity {
         switchMode(true);
     }
 
+    /**
+     * Switches the UI between login and sign-up modes.
+     * <p>
+     * Updates tab highlighting, field visibility, button label,
+     * and clears all input fields.
+     * </p>
+     *
+     * @param loginMode true to switch to login mode, false for sign-up mode
+     */
     private void switchMode(boolean loginMode) {
         isLoginMode = loginMode;
 
@@ -99,6 +124,15 @@ public class LoginActivity extends AppCompatActivity {
         etPassword.setText("");
     }
 
+    /**
+     * Handles login with email and password.
+     * <p>
+     * Validates that fields are not empty, then authenticates with Firebase.
+     * On success, updates the user's Firestore document and navigates to
+     * MainActivity. Disables the primary button during the request to
+     * prevent duplicate submissions.
+     * </p>
+     */
     private void handleLogin() {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
@@ -138,6 +172,15 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Handles new account creation with name, email, and password.
+     * <p>
+     * Validates that all fields are filled and that the password meets the
+     * minimum length requirement. On success, saves the new user profile to
+     * Firestore via saveUserToFirestore. Disables the primary button during
+     * the request to prevent duplicate submissions.
+     * </p>
+     */
     private void handleSignup() {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
@@ -166,6 +209,15 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Handles anonymous guest login using the device's Android ID.
+     * <p>
+     * Checks Firestore for an existing guest account linked to this device.
+     * If found, migrates the old profile to the new anonymous UID. If not
+     * found, creates a new guest profile. Disables the guest button during
+     * the request to prevent duplicate submissions.
+     * </p>
+     */
     private void handleDeviceLogin() {
         btnGuest.setEnabled(false);
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -213,6 +265,21 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Saves a new user profile to the Firestore "users" collection.
+     * <p>
+     * Builds a profile map with the provided fields and writes it to
+     * Firestore using merge to avoid overwriting existing data. On success,
+     * navigates to MainActivity. On failure, re-enables the action buttons.
+     * </p>
+     *
+     * @param uid      the Firebase Authentication UID for the user
+     * @param name     the display name of the user
+     * @param email    the user's email address, or null for guest accounts
+     * @param role     the user's role (e.g., "entrant" or "guest")
+     * @param isGuest  true if the account is an anonymous guest account
+     * @param deviceId the device's Android ID, or null for non-guest accounts
+     */
     private void saveUserToFirestore(String uid, String name, String email,
                                      String role, boolean isGuest, String deviceId) {
         Map<String, Object> userProfile = new HashMap<>();
@@ -249,6 +316,13 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Sends a password reset email to the address entered in the email field.
+     * <p>
+     * Validates that the email field is not empty before sending. Displays
+     * a confirmation toast on success or an error message on failure.
+     * </p>
+     */
     private void handleForgotPassword() {
         String email = etEmail.getText().toString().trim();
 
@@ -266,6 +340,11 @@ public class LoginActivity extends AppCompatActivity {
                 );
     }
 
+    /**
+     * Navigates to MainActivity and finishes this activity.
+     *
+     * @param isGuest true if the user is logged in as a guest, false otherwise
+     */
     private void navigateToMain(boolean isGuest) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("isGuest", isGuest);
