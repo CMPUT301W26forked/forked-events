@@ -25,20 +25,24 @@ public class QrDisplayFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_qr_display, container, false);
 
         if (getArguments() != null) {
             eventId = getArguments().getString("eventId");
         }
 
-        view.findViewById(R.id.btnBack).setOnClickListener(v -> 
-            requireActivity().getSupportFragmentManager().popBackStack()
+        view.findViewById(R.id.btnBack).setOnClickListener(v ->
+                requireActivity().getSupportFragmentManager().popBackStack()
         );
 
         ImageView ivQrCode = view.findViewById(R.id.ivQrCode);
-        if (eventId != null) {
-            generateQrCode(eventId, ivQrCode);
+
+        if (eventId != null && !eventId.trim().isEmpty()) {
+            String qrPayload = "EVENT_ID:" + eventId.trim();
+            generateQrCode(qrPayload, ivQrCode);
         } else {
             Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
         }
@@ -49,16 +53,25 @@ public class QrDisplayFragment extends Fragment {
     private void generateQrCode(String data, ImageView imageView) {
         int width = 500;
         int height = 500;
-        MultiFormatWriter writer = new MultiFormatWriter();
+
         try {
-            BitMatrix matrix = writer.encode(data, BarcodeFormat.QR_CODE, width, height);
+            BitMatrix matrix = new MultiFormatWriter().encode(
+                    data,
+                    BarcodeFormat.QR_CODE,
+                    width,
+                    height
+            );
+
             Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
                     bitmap.setPixel(x, y, matrix.get(x, y) ? Color.BLACK : Color.WHITE);
                 }
             }
+
             imageView.setImageBitmap(bitmap);
+
         } catch (WriterException e) {
             Toast.makeText(getContext(), "QR Generation Failed", Toast.LENGTH_SHORT).show();
         }

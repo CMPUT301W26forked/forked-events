@@ -15,18 +15,16 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
-import com.example.lottery.Event;
 import com.example.lottery.R;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.journeyapps.barcodescanner.DecoratedBarcodeView;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class QrScannerFragment extends Fragment {
 
     private DecoratedBarcodeView barcodeScanner;
-    private List<Event> eventList;
     private boolean isScanning = false;
+    private FirebaseFirestore db;
 
     private final ActivityResultLauncher<String> cameraPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
@@ -52,33 +50,11 @@ public class QrScannerFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        db = FirebaseFirestore.getInstance();
         barcodeScanner = view.findViewById(R.id.barcodeScanner);
 
-        // Hide scanner preview at first
         barcodeScanner.setVisibility(View.GONE);
         barcodeScanner.pause();
-
-        eventList = new ArrayList<>();
-        eventList.add(new Event(
-                "Swimming Lessons - Kids",
-                "Open",
-                "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
-                "West Side Pool",
-                "3/14/2026 - 5/14/2026",
-                "20 spots available",
-                "Waitlist Open\ncloses 2/16/2026",
-                "47 Joined"
-        ));
-        eventList.add(new Event(
-                "Adult Basketball League",
-                "Lottery Pending",
-                "Fun and safe swimming lessons for children aged 6-10. Learn basic strokes, water safety, and build...",
-                "City Gym",
-                "4/01/2026 - 6/01/2026",
-                "10 spots available",
-                "Lottery closes\n3/01/2026",
-                "12 Joined"
-        ));
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
             stopScanning();
@@ -88,10 +64,10 @@ public class QrScannerFragment extends Fragment {
                     .replace(R.id.fragment_container, new EntrantEventsFragment())
                     .commit();
 
-            com.google.android.material.bottomnavigation.BottomNavigationView bottomNav =
-                    requireActivity().findViewById(R.id.bottomNav);
-
-            bottomNav.setSelectedItemId(R.id.nav_events);
+            BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottomNav);
+            if (bottomNav != null) {
+                bottomNav.setSelectedItemId(R.id.nav_events);
+            }
         });
 
         view.findViewById(R.id.btnStartScanning).setOnClickListener(v -> {
@@ -139,29 +115,42 @@ public class QrScannerFragment extends Fragment {
         }
     }
 
-    private void findAndOpenEvent(String scannedTitle) {
-        for (Event event : eventList) {
-            if (event.getTitle().equalsIgnoreCase(scannedTitle)) {
-                openEventDetails(event);
-                return;
-            }
+    private void findAndOpenEvent(String scannedValue) {
+        String scannedEventId = extractEventId(scannedValue);
+
+        if (scannedEventId.isEmpty()) {
+            Toast.makeText(requireContext(), "Invalid event QR.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        Toast.makeText(requireContext(), "Event not found.", Toast.LENGTH_SHORT).show();
+        db.collection("events")
+                .document(scannedEventId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Toast.makeText(requireContext(), "Event not found.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    openEventDetails(scannedEventId);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(requireContext(), "Failed to load event.", Toast.LENGTH_SHORT).show()
+                );
     }
 
-    private void openEventDetails(Event event) {
-        Bundle bundle = new Bundle();
-        bundle.putString("title", event.getTitle());
-        bundle.putString("status", event.getStatus());
-        bundle.putString("description", event.getDescription());
-        bundle.putString("location", event.getLocation());
-        bundle.putString("date", event.getDate());
-        bundle.putString("spots", event.getSpots());
-        bundle.putString("lotteryInfo", event.getWaitlistInfo());
-        bundle.putString("joinedInfo", event.getJoinedCount());
+    private String extractEventId(String scannedValue) {
+        if (scannedValue.startsWith("EVENT_ID:")) {
+            return scannedValue.substring("EVENT_ID:".length()).trim();
+        }
+        return scannedValue.trim();
+    }
 
-        com.example.lottery.Entrant.Activity.QrEventDetailsFragment fragment = new QrEventDetailsFragment();
+    private void openEventDetails(String eventId) {
+        Bundle bundle = new Bundle();
+        bundle.putString("eventId", eventId);
+
+        EntrantEventDetailsFragment fragment = new EntrantEventDetailsFragment();
         fragment.setArguments(bundle);
 
         requireActivity().getSupportFragmentManager()

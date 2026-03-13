@@ -2,7 +2,6 @@ package com.example.lottery;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
-import com.google.firebase.firestore.PropertyName;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -17,7 +16,7 @@ public class Event {
     private String spots;
     private String waitlistInfo;
     private String joinedCount;
-    
+
     // Fields matching Firestore
     private String name;
     private long totalSpots;
@@ -29,7 +28,21 @@ public class Event {
         // Needed for Firestore
     }
 
-    public Event(String title, String status, String description, String location, String date, String spots, String waitlistInfo, String joinedCount) {
+    public Event(String title, String status, String description, String location,
+                 String date, String spots, String waitlistInfo, String joinedCount) {
+        this.title = title;
+        this.status = status;
+        this.description = description;
+        this.location = location;
+        this.date = date;
+        this.spots = spots;
+        this.waitlistInfo = waitlistInfo;
+        this.joinedCount = joinedCount;
+    }
+
+    public Event(String eventId, String title, String status, String description, String location,
+                 String date, String spots, String waitlistInfo, String joinedCount) {
+        this.eventId = eventId;
         this.title = title;
         this.status = status;
         this.description = description;
@@ -58,7 +71,7 @@ public class Event {
     }
 
     public String getStatus() {
-        return status;
+        return status != null ? status : "";
     }
 
     public void setStatus(String status) {
@@ -66,7 +79,7 @@ public class Event {
     }
 
     public String getDescription() {
-        return description;
+        return description != null ? description : "";
     }
 
     public void setDescription(String description) {
@@ -74,7 +87,7 @@ public class Event {
     }
 
     public String getLocation() {
-        return location;
+        return location != null ? location : "";
     }
 
     public void setLocation(String location) {
@@ -87,7 +100,7 @@ public class Event {
             SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
             return sdf.format(registrationStart.toDate()) + " - " + sdf.format(registrationEnd.toDate());
         }
-        return date;
+        return date != null ? date : "";
     }
 
     public void setDate(String date) {
@@ -99,7 +112,7 @@ public class Event {
         if (totalSpots > 0) {
             return totalSpots + " spots available";
         }
-        return spots;
+        return spots != null ? spots : "";
     }
 
     public void setSpots(String spots) {
@@ -112,7 +125,7 @@ public class Event {
             SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
             return "Waitlist Open\ncloses " + sdf.format(registrationEnd.toDate());
         }
-        return waitlistInfo;
+        return waitlistInfo != null ? waitlistInfo : "";
     }
 
     public void setWaitlistInfo(String waitlistInfo) {
@@ -124,7 +137,7 @@ public class Event {
         if (waitListCount >= 0) {
             return waitListCount + " Joined";
         }
-        return joinedCount;
+        return joinedCount != null ? joinedCount : "";
     }
 
     public void setJoinedCount(String joinedCount) {
@@ -132,7 +145,7 @@ public class Event {
     }
 
     public String getName() {
-        return name;
+        return name != null ? name : "";
     }
 
     public void setName(String name) {
