@@ -42,7 +42,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-    androidTestImplementation("org.mockito:mockito-android:5.12.0")
+    testImplementation("org.mockito:mockito-core:4.11.0")
 
     implementation("com.github.bumptech.glide:glide:4.16.0")
 

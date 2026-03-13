@@ -39,6 +39,7 @@ public class EntrantEventDetailsFragment extends Fragment {
     private boolean isOnWaitlist = false;
     public String entrantId;
     public WaitlistService waitlistService;
+    private String eventStatus = "Open";
 
     public EntrantEventDetailsFragment() {
     }
@@ -117,6 +118,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                     tvEventName.setText(doc.getString("name"));
                     tvDescription.setText(doc.getString("description"));
                     tvStatusTag.setText(doc.getString("status"));
+                    if (doc.getString("status") != null) {
+                        eventStatus = doc.getString("status");
+                    } else {
+                        eventStatus = "Closed";
+                    }
                     tvLocation.setText(doc.getString("location"));
                     tvOrganizer.setText(doc.getString("organizer"));
 
@@ -157,39 +163,66 @@ public class EntrantEventDetailsFragment extends Fragment {
                 );
     }
 
+    /***
+     * Allows entrants to join waitlist.
+     * Also checks the waitlist capacity set by the event organizer.
+     * @param btnJoin Button that allows entrant to join waitlist.
+     */
+
     private void joinWaitlist(MaterialButton btnJoin) {
-        btnJoin.setEnabled(false);
+        if (!"Open".equalsIgnoreCase(eventStatus)) {
+            Toast.makeText(getContext(), "Registration is closed.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        entrantService.signUpForEvent(entrantId, eventId);
+        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+            Long waitListLimit = doc.getLong("waitListLimit");
+            Long waitlistCount = doc.getLong("waitlistCount");
 
-        db.collection("events")
-                .document(eventId)
-                .update(
-                        "waitlistedEntrantIds", FieldValue.arrayUnion(entrantId),
-                        "waitlistCount", FieldValue.increment(1)
-                )
-                .addOnSuccessListener(unused ->
-                        db.collection("users")
-                                .document(entrantId)
-                                .update("registeredEventIds", FieldValue.arrayUnion(eventId))
-                                .addOnSuccessListener(unused2 -> {
-                                    isOnWaitlist = true;
-                                    setLeaveWaitlistStyle(btnJoin);
-                                    btnJoin.setEnabled(true);
-                                    Toast.makeText(getContext(), "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
-                                })
-                                .addOnFailureListener(e -> {
-                                    isOnWaitlist = true;
-                                    setLeaveWaitlistStyle(btnJoin);
-                                    btnJoin.setEnabled(true);
-                                    Toast.makeText(getContext(), "Joined waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                })
-                )
-                .addOnFailureListener(e -> {
-                    btnJoin.setEnabled(true);
-                    Toast.makeText(getContext(), "Failed to join waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+            if (waitListLimit != null && waitlistCount != null && waitlistCount >= waitListLimit) {
+                Toast.makeText(getContext(), "Waitlist is full.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+
+            btnJoin.setEnabled(false);
+
+            entrantService.signUpForEvent(entrantId, eventId);
+
+            db.collection("events")
+                    .document(eventId)
+                    .update(
+                            "waitlistedEntrantIds", FieldValue.arrayUnion(entrantId),
+                            "waitlistCount", FieldValue.increment(1)
+                    )
+                    .addOnSuccessListener(unused ->
+                            db.collection("users")
+                                    .document(entrantId)
+                                    .update("registeredEventIds", FieldValue.arrayUnion(eventId))
+                                    .addOnSuccessListener(unused2 -> {
+                                        isOnWaitlist = true;
+                                        setLeaveWaitlistStyle(btnJoin);
+                                        btnJoin.setEnabled(true);
+                                        Toast.makeText(getContext(), "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
+                                    })
+                                    .addOnFailureListener(e -> {
+                                        isOnWaitlist = true;
+                                        setLeaveWaitlistStyle(btnJoin);
+                                        btnJoin.setEnabled(true);
+                                        Toast.makeText(getContext(), "Joined waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    })
+                    )
+                    .addOnFailureListener(e -> {
+                        btnJoin.setEnabled(true);
+                        Toast.makeText(getContext(), "Failed to join waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        });
     }
+
+    /***
+     * Allows entrants to leave waitlist.
+     * @param btnJoin Button that allows entrant to leave waitlist.
+     */
 
     private void leaveWaitlist(MaterialButton btnJoin) {
         btnJoin.setEnabled(false);
@@ -221,6 +254,7 @@ public class EntrantEventDetailsFragment extends Fragment {
                     btnJoin.setEnabled(true);
                     Toast.makeText(getContext(), "Failed to leave waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+
     }
 
     private void setJoinWaitlistStyle(MaterialButton btn) {
@@ -235,6 +269,10 @@ public class EntrantEventDetailsFragment extends Fragment {
         ));
     }
 
+    /***
+     * Asks entrant if they want to remain on waitlist after they did not get selected.
+     * @param btnJoin The join/leave button.
+     */
     public void showStayInList(MaterialButton btnJoin) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Not Selected")
