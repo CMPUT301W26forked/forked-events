@@ -2,10 +2,8 @@ package com.example.lottery.organizer;
 
 import android.net.Uri;
 
-import com.example.lottery.organizer.RepoCallback;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
 
 /**
  * handles event poster uploads in storage
@@ -13,16 +11,20 @@ import com.google.firebase.storage.StorageReference;
 public class PosterStorageService {
     private final FirebaseStorage storage = FirebaseStorage.getInstance();
 
-
+    /**
+     * returns a storage reference for an event poster
+     * @param eventId unique identifier for the event
+     * @return storage reference for the poster image
+     */
     private StorageReference posterRef(String eventId) {
         return storage.getReference().child("posters/" + eventId + ".jpg");
     }
 
     /**
-     * uploads the local image to storage and return download URI via cb
-     * @param eventId
-     * @param localUri
-     * @param cb
+     * uploads local image to storage and returns download uri via callback
+     * @param eventId unique identifier for the event
+     * @param localUri local uri of the image file
+     * @param cb callback returning the download uri
      */
     public void uploadPoster(String eventId, Uri localUri, RepoCallback<Uri> cb) {
         StorageReference ref = posterRef(eventId);
@@ -32,7 +34,7 @@ public class PosterStorageService {
                         ref.getDownloadUrl()
                                 .addOnSuccessListener(cb::onSuccess)
                                 .addOnFailureListener(cb::onError)
-                        )
+                )
                 .addOnFailureListener(cb::onError);
     }
 }

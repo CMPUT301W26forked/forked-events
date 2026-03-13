@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * handles user authentication and session management
+ */
 public class LoginActivity extends AppCompatActivity {
 
     private TextView tabLogin, tabSignup, tvForgotPassword;
@@ -75,6 +78,10 @@ public class LoginActivity extends AppCompatActivity {
         switchMode(true);
     }
 
+    /**
+     * switches between login and signup ui modes
+     * @param loginMode true for login mode
+     */
     private void switchMode(boolean loginMode) {
         isLoginMode = loginMode;
 
@@ -99,6 +106,9 @@ public class LoginActivity extends AppCompatActivity {
         etPassword.setText("");
     }
 
+    /**
+     * handles user login with email and password
+     */
     private void handleLogin() {
         String email = etEmail.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
@@ -138,6 +148,9 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * handles new user account creation
+     */
     private void handleSignup() {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
@@ -166,6 +179,9 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * handles anonymous guest login tied to device id
+     */
     private void handleDeviceLogin() {
         btnGuest.setEnabled(false);
         String deviceId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
@@ -213,6 +229,15 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * saves user profile data to firestore
+     * @param uid user id
+     * @param name user name
+     * @param email user email
+     * @param role user role
+     * @param isGuest guest status
+     * @param deviceId unique device id
+     */
     private void saveUserToFirestore(String uid, String name, String email,
                                      String role, boolean isGuest, String deviceId) {
         Map<String, Object> userProfile = new HashMap<>();
@@ -249,6 +274,9 @@ public class LoginActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * sends password reset email to the user
+     */
     private void handleForgotPassword() {
         String email = etEmail.getText().toString().trim();
 
@@ -266,6 +294,10 @@ public class LoginActivity extends AppCompatActivity {
                 );
     }
 
+    /**
+     * navigates user to the main activity
+     * @param isGuest true if user is guest
+     */
     private void navigateToMain(boolean isGuest) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("isGuest", isGuest);

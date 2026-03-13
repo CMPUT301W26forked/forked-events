@@ -5,10 +5,18 @@ import android.content.SharedPreferences;
 
 import java.util.UUID;
 
+/**
+ * utility class for managing device identification
+ */
 public class DeviceManager {
     private static final String PREF_NAME = "entrant_prefs";
     private static final String KEY_DEVICE_ID = "device_id";
 
+    /**
+     * retrieves or generates a persistent unique device identifier
+     * @param context application context for accessing shared preferences
+     * @return unique device identifier string
+     */
     public static String getDeviceId(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         String deviceId = prefs.getString(KEY_DEVICE_ID, null);

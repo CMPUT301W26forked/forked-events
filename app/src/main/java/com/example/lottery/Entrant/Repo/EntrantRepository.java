@@ -7,18 +7,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * repository for handling entrant data in firestore
+ */
 public class EntrantRepository {
 
     private final FirebaseFirestore db;
 
+    /**
+     * constructs repository and initializes firestore
+     */
     public EntrantRepository() {
         db = FirebaseFirestore.getInstance();
     }
 
+    /**
+     * gets firestore instance
+     * @return firestore database
+     */
     public FirebaseFirestore getDb() {
         return db;
     }
 
+    /**
+     * creates new entrant profile if it does not already exist
+     * @param entrantId unique identifier for the entrant
+     */
     public void createEntrantIfNotExists(String entrantId) {
         db.collection("users")
                 .document(entrantId)
