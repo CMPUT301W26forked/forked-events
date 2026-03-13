@@ -64,7 +64,7 @@ public class EventManagementFragment extends Fragment {
                     .commit();
         });
 
-        // btn to message/notification
+        // btn jump to message/notification
         View btnToMessage = view.findViewById(R.id.btnToMessage);
         view.findViewById(R.id.btnToMessage).setOnClickListener(v -> {
             getParentFragmentManager().beginTransaction()

@@ -78,6 +78,9 @@
                 app:cardElevation="2dp">
 
                 <TextView
+                    android:id="@+id/btnToMessage"
+                    android:clickable="true"
+                    android:focusable="true"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"

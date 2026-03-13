@@ -170,7 +170,7 @@ public class FSEventRepo implements EventRepo {
     }
 
     /**
-     * send message to pending.
+     * send message to pending
      * @param eventId
      * @param userIds
      * @param message

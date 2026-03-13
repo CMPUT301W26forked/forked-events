@@ -18,7 +18,7 @@ import java.util.List;
 import androidx.annotation.Nullable;
 
 /**
- * organizer can send DIY notification/message to entrant
+ * organizer can send DIY notification/message to entrants
  */
 public class SendNotificationsFragment extends Fragment {
     private String EventId;

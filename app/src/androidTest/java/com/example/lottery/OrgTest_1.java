@@ -12,7 +12,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class OrgTest_1 {
-
+    // test
     @Test
     public void organizerFragment_RecyclerViewAndButton() {
         FragmentScenario<OrganizerFragment> scenario = FragmentScenario.launchInContainer(

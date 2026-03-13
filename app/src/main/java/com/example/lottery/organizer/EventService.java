@@ -126,7 +126,7 @@ public class EventService {
 
     /**
      * run lottery/sampling service by randomly selecting a specified number of waitingEntrantIds
-     * selected entrants are moved to pendingEntrantIds.
+     * selected entrants are moved to pendingEntrantIds
      * @param eventId
      * @param sampleSize
      * @param cb
