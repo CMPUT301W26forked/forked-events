@@ -1,14 +1,17 @@
 package com.example.lottery.admin;
 
 public class ModerationItem {
-    private String title;
-    private String detail;
+    private String eventId;
+    private String title;      // event name
+    private String imageUrl;   // posterUri (Firebase Storage download URL)
 
-    public ModerationItem(String title, String detail) {
+    public ModerationItem(String eventId, String title, String imageUrl) {
+        this.eventId = eventId;
         this.title = title;
-        this.detail = detail;
+        this.imageUrl = imageUrl;
     }
 
+    public String getEventId() { return eventId; }
     public String getTitle() { return title; }
-    public String getDetail() { return detail; }
+    public String getImageUrl() { return imageUrl; }
 }

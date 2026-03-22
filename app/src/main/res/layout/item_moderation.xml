@@ -10,6 +10,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:paddingEnd="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/btnOption1"
         app:layout_constraintStart_toStartOf="parent"
@@ -19,18 +20,18 @@
             android:id="@+id/tvModerationTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Moderation by User_X"
+            android:text="Event Name"
             android:textColor="@color/black"
             android:textSize="14sp"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/tvModerationDetail"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Description detail"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
+        <ImageView
+            android:id="@+id/ivPosterThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Event poster thumbnail"
+            android:scaleType="centerCrop" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
@@ -42,7 +43,7 @@
         android:backgroundTint="#1A1A1A"
         android:insetTop="0dp"
         android:insetBottom="0dp"
-        android:text="Option"
+        android:text="Remove"
         android:textAllCaps="false"
         android:textSize="11sp"
         app:cornerRadius="6dp"

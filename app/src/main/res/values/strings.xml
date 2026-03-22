@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Lottery</string>
+    <string name="temp_logout_admin">temporary button to log out as admin</string>
 </resources>

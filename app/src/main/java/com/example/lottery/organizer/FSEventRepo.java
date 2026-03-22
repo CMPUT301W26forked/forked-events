@@ -78,6 +78,13 @@ public class FSEventRepo implements EventRepo {
     }
 
     @Override
+    public void removePosterUrl(String eventId, RepoCallback<Void> cb) {
+        ref(eventId).update("posterUri", FieldValue.delete())
+                .addOnSuccessListener(v -> cb.onSuccess(null))
+                .addOnFailureListener(cb::onError);
+    }
+
+    @Override
     public void saveEvent(String eventId, Map<String, Object> eventData, RepoCallback<Void> cb) {
         ref(eventId).set(eventData, SetOptions.merge())
                 .addOnSuccessListener(v -> cb.onSuccess(null))

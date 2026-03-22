@@ -3,19 +3,27 @@ package com.example.lottery.admin;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.bumptech.glide.Glide;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
 import java.util.List;
 
 public class ModerationAdapter extends RecyclerView.Adapter<ModerationAdapter.ViewHolder> {
 
-    private List<ModerationItem> items;
+    public interface OnRemoveListener {
+        void onRemove(String eventId, int position);
+    }
 
-    public ModerationAdapter(List<ModerationItem> items) {
+    private List<ModerationItem> items;
+    private OnRemoveListener removeListener;
+
+    public ModerationAdapter(List<ModerationItem> items, OnRemoveListener removeListener) {
         this.items = items;
+        this.removeListener = removeListener;
     }
 
     @NonNull
@@ -29,14 +37,23 @@ public class ModerationAdapter extends RecyclerView.Adapter<ModerationAdapter.Vi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ModerationItem item = items.get(position);
         holder.tvTitle.setText(item.getTitle());
-        holder.tvDetail.setText(item.getDetail());
-        
+
+        // Load image with Glide
+        Glide.with(holder.ivPoster.getContext())
+                .load(item.getImageUrl())
+                .centerCrop()
+                .into(holder.ivPoster);
+
+        // Remove button — use getAdapterPosition() at click time, not the stale bind-time position
         holder.btnOption1.setOnClickListener(v -> {
-            // Handle Option 1 click
+            int currentPos = holder.getAdapterPosition();
+            if (currentPos != RecyclerView.NO_ID && removeListener != null) {
+                removeListener.onRemove(item.getEventId(), currentPos);
+            }
         });
-        
+
         holder.btnOption2.setOnClickListener(v -> {
-            // Handle Option 2 click
+            // Reserved for future use
         });
     }
 
@@ -46,13 +63,14 @@ public class ModerationAdapter extends RecyclerView.Adapter<ModerationAdapter.Vi
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvTitle, tvDetail;
+        TextView tvTitle;
+        ImageView ivPoster;
         MaterialButton btnOption1, btnOption2;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvModerationTitle);
-            tvDetail = itemView.findViewById(R.id.tvModerationDetail);
+            ivPoster = itemView.findViewById(R.id.ivPosterThumbnail);
             btnOption1 = itemView.findViewById(R.id.btnOption1);
             btnOption2 = itemView.findViewById(R.id.btnOption2);
         }
