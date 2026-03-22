@@ -75,4 +75,18 @@ public interface EventRepo {
      * @param cb callback for success or error
      */
     void createNotification(String eventId, String entrantId, String eventName, String message, RepoCallback<Void> cb);
+
+    /**
+     * retrieves a list of entrant ids on the pending (invited) list
+     * @param eventId unique event id
+     * @param cb callback returning a list of ids
+     */
+    void getPendingEntrantIds(String eventId, RepoCallback<List<String>> cb);
+
+    /**
+     * retrieves a list of entrant ids who have enrolled (accepted invitation)
+     * @param eventId unique event id
+     * @param cb callback returning a list of ids
+     */
+    void getRegisteredEntrantIds(String eventId, RepoCallback<List<String>> cb);
 }
