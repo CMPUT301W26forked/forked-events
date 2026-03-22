@@ -3,6 +3,7 @@ package com.example.lottery.organizer;
 import android.net.Uri;
 import android.provider.Settings;
 
+import com.example.lottery.EventComment;
 import com.example.lottery.organizer.EventRepo;
 import com.example.lottery.organizer.RepoCallback;
 import com.google.firebase.Timestamp;
@@ -204,6 +205,36 @@ public class EventService {
                 cb.onError(e);
             }
         });
+    }
+
+    /**
+     * validation for comment retrieval
+     * @param eventId
+     * @param cb
+     */
+    public void getComments(String eventId, RepoCallback<List<EventComment>> cb) {
+        if (eventId == null || eventId.isEmpty()) {
+            cb.onError(new IllegalArgumentException("eventId required"));
+            return;
+        }
+        repo.getEventComments(eventId, cb);
+    }
+
+    /**
+     * validation for comment deletion
+     * @param eventId
+     * @param cb
+     */
+    public void deleteComment(String eventId, String commentId, RepoCallback<Void> cb) {
+        if (eventId == null || eventId.isEmpty()) {
+            cb.onError(new IllegalArgumentException("eventId required"));
+            return;
+        }
+        if (commentId == null || commentId.isEmpty()) {
+            cb.onError(new IllegalArgumentException("commentId required"));
+            return;
+        }
+        repo.deleteEventComment(eventId, commentId, cb);
     }
 
 }
