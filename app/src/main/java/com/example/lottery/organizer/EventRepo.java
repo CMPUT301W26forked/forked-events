@@ -35,6 +35,13 @@ public interface EventRepo {
     void setPosterUrl(String eventId, String posterUrl, RepoCallback<Void> cb);
 
     /**
+     * removes the poster image url from an event
+     * @param eventId unique event id
+     * @param cb callback for success or error
+     */
+    void removePosterUrl(String eventId, RepoCallback<Void> cb);
+
+    /**
      * saves or updates all event metadata
      * @param eventId unique event id
      * @param eventData map containing event fields
