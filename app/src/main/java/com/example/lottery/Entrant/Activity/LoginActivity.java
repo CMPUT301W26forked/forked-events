@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.lottery.MainActivity;
 import com.example.lottery.R;
+import com.example.lottery.admin.AdminActivity;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -47,7 +48,11 @@ public class LoginActivity extends AppCompatActivity {
 
         // Check if user is already logged in
         if (mAuth.getCurrentUser() != null) {
-            navigateToMain(mAuth.getCurrentUser().isAnonymous());
+            if (mAuth.getCurrentUser().isAnonymous()) {
+                navigateToMain(true);
+            } else {
+                checkRoleAndNavigate(mAuth.getCurrentUser().getUid());
+            }
             return;
         }
 
@@ -122,25 +127,8 @@ public class LoginActivity extends AppCompatActivity {
 
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
-                    String uid = authResult.getUser().getUid();
-
-                    Map<String, Object> updates = new HashMap<>();
-                    updates.put("uid", uid);
-                    updates.put("email", authResult.getUser().getEmail());
-                    updates.put("isGuest", false);
-                    updates.put("role", "entrant");
-
-                    db.collection("users")
-                            .document(uid)
-                            .set(updates, com.google.firebase.firestore.SetOptions.merge())
-                            .addOnSuccessListener(unused -> {
-                                Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
-                                navigateToMain(false);
-                            })
-                            .addOnFailureListener(e -> {
-                                btnPrimary.setEnabled(true);
-                                Toast.makeText(this, "Failed to load profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                            });
+                    Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
+                    checkRoleAndNavigate(authResult.getUser().getUid());
                 })
                 .addOnFailureListener(e -> {
                     btnPrimary.setEnabled(true);
@@ -292,6 +280,35 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
+    }
+
+    /**
+     * fetches the user's role from Firestore and routes to the appropriate activity
+     * @param uid authenticated user's uid
+     */
+    private void checkRoleAndNavigate(String uid) {
+        db.collection("users").document(uid).get()
+                .addOnSuccessListener(doc -> {
+                    String role = doc.getString("role");
+                    if ("admin".equals(role)) {
+                        navigateToAdmin();
+                    } else {
+                        navigateToMain(false);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (btnPrimary != null) btnPrimary.setEnabled(true);
+                    Toast.makeText(this, "Failed to load profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
+    /**
+     * navigates admin user to the admin dashboard
+     */
+    private void navigateToAdmin() {
+        Intent intent = new Intent(this, AdminActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     /**
