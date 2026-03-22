@@ -66,9 +66,18 @@ public class EventManagementFragment extends Fragment {
 
         // btn jump to message/notification
         View btnToMessage = view.findViewById(R.id.btnToMessage);
-        view.findViewById(R.id.btnToMessage).setOnClickListener(v -> {
+        btnToMessage.setOnClickListener(v -> {
             getParentFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, SendNotificationsFragment.newInstance(eventId))
+                    .replace(R.id.fragment_container, SendNotificationsFragment.newInstance(eventId, eventName))
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        // btn jump to comment/info view
+        View btnToInfo = view.findViewById(R.id.btnToInfo);
+        btnToInfo.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, ViewCommentsFragment.newInstance(eventId, eventName))
                     .addToBackStack(null)
                     .commit();
         });
