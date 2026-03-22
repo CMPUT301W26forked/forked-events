@@ -52,7 +52,15 @@ public class SendNotificationsFragment extends Fragment {
         return view;
     }
 
-    private void sendMessage() {
+    public void setRepo(FSEventRepo repo) {
+        this.repo = repo;
+    }
+
+    public void setEtmsg(EditText etmsg) {
+        this.etmsg = etmsg;
+    }
+
+    public void sendMessage() {
         String message = etmsg.getText().toString().trim();
 
         if (message.isEmpty()) {

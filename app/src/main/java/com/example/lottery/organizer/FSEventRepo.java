@@ -155,6 +155,7 @@ public class FSEventRepo implements EventRepo {
      * @param eventId
      * @param cb
      */
+    @Override
     public void getPendingEntrantIds(String eventId, RepoCallback<List<String>> cb) {
         ref(eventId).get()
                 .addOnSuccessListener(doc -> {
@@ -176,6 +177,18 @@ public class FSEventRepo implements EventRepo {
      * @param message
      * @param cb
      */
+    @Override
+    public void getRegisteredEntrantIds(String eventId, RepoCallback<List<String>> cb) {
+        ref(eventId).get().addOnSuccessListener(doc -> {
+            if (doc.exists()) {
+                List<String> ids = (List<String>) doc.get("registeredEntrantIds");
+                cb.onSuccess(ids != null ? ids : new ArrayList<>());
+            } else {
+                cb.onSuccess(new ArrayList<>());
+            }
+        }).addOnFailureListener(cb::onError);
+    }
+
     public void sendMessageToPending(String eventId, List<String> userIds, String message, RepoCallback<Void> cb) {
         if (userIds == null || userIds.isEmpty()) {
             cb.onError(new IllegalArgumentException("No selected entrants"));
