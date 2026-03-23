@@ -142,21 +142,27 @@ public class FSEventRepo implements EventRepo {
      */
     @Override
     public void createNotification(String eventId, String entrantId, String eventName, String message, RepoCallback<Void> cb) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("eventId", eventId);
-        notification.put("eventName", eventName);
-        notification.put("entrantId", entrantId);
-        notification.put("message", message);
-        notification.put("type", "SELECTED");
-        notification.put("createdAt", com.google.firebase.Timestamp.now());
-        notification.put("isRead", false);
+        checkNotificationsEnabled(entrantId, enabled -> {
+            if (!enabled) {
+                cb.onSuccess(null);
+                return;
+            }
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("eventId", eventId);
+            notification.put("eventName", eventName);
+            notification.put("entrantId", entrantId);
+            notification.put("message", message);
+            notification.put("type", "SELECTED");
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("isRead", false);
 
-        db.collection("users")
+            db.collection("users")
                     .document(entrantId)
                     .collection("notification")
                     .add(notification)
                     .addOnSuccessListener(subDoc -> cb.onSuccess(null))
                     .addOnFailureListener(cb::onError);
+        });
     }
 
     /**
@@ -215,10 +221,12 @@ public class FSEventRepo implements EventRepo {
         final boolean[] failed = {false};
 
         for (String id : userIds) {
-            Map<String, Object> notification = new HashMap<>();
-            notification.put("eventId", eventId);
-            notification.put("recipientUid", id);
-            notification.put("eventName", eventName);
+            checkNotificationsEnabled(id, enabled -> {
+                if (enabled) {
+                    Map<String, Object> notification = new HashMap<>();
+                    notification.put("eventId", eventId);
+                    notification.put("recipientUid", id);
+                    notification.put("eventName", eventName);
             notification.put("message", message);
             notification.put("type", "MESSAGE");
             notification.put("createdAt", Timestamp.now());
@@ -238,9 +246,131 @@ public class FSEventRepo implements EventRepo {
                         if (failed[0]) return;
                         failed[0] = true;
                         cb.onError(e);
-                    });
+                    });}
+                else {
+                    done[0]++;
+                    if (!failed[0] && done[0] == total) cb.onSuccess(null);
+                }
+            });
 
         }
+    }
+
+    private void checkNotificationsEnabled(String entrantId, NotificationEnabledCallback cb) {
+        db.collection("users")
+                .document(entrantId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        Boolean enabled = doc.getBoolean("notificationsEnabled");
+                        cb.onResult(enabled == null || enabled);
+                    }
+                    else {
+                        cb.onResult(true);
+                    }
+                })
+                .addOnFailureListener(e -> cb.onResult(true));
+
+    }
+
+    private interface NotificationEnabledCallback {
+        void onResult(boolean enabled);
+    }
+
+    /***
+     * US 01.04.02, notifies entrant they were not selected
+     * @param eventId event
+     * @param entrantId entrant to be notified
+     * @param eventName name of event
+     * @param cb callback on success/failure
+     */
+    public void createLossNotification(String eventId, String entrantId, String eventName, RepoCallback<Void> cb) {
+        checkNotificationsEnabled(entrantId, enabled -> {
+            if (!enabled ) {
+                cb.onSuccess(null);
+                return;
+            }
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("eventId", eventId);
+            notification.put("eventName", eventName);
+            notification.put("entrantId", entrantId);
+            notification.put("message", "Unfortunately, you were not selected in the lottery for " + eventName + "." );
+            notification.put("type", "NOT_SELECTED");
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("isRead", false);
+
+            db.collection("users")
+                    .document(entrantId)
+                    .collection("notification")
+                    .add(notification)
+                    .addOnSuccessListener(subDoc -> cb.onSuccess(null))
+                    .addOnFailureListener(cb::onError);
+
+        });
+    }
+
+    /***
+     * US 01.05.06 notify entrant they have been invited to join private event waiting list
+     * @param eventId
+     * @param entrantId
+     * @param eventName
+     * @param cb
+     */
+    public void createWaitListInviteNotifications(String eventId, String entrantId, String eventName, RepoCallback<Void> cb) {
+        checkNotificationsEnabled(entrantId, enabled -> {
+            if (!enabled) {
+                cb.onSuccess(null);
+                return;
+            }
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("eventId", eventId);
+            notification.put("eventName", eventName);
+            notification.put("entrantId", entrantId);
+            notification.put("message", "You have been invited to join waiting list for the private event: " + eventName + ".");
+            notification.put("type", "WAITLIST_INVITE");
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("isRead", false);
+
+            db.collection("users")
+                    .document(entrantId)
+                    .collection("notification")
+                    .add(notification)
+                    .addOnSuccessListener(subDoc -> cb.onSuccess(null))
+                    .addOnFailureListener(cb::onError);
+
+        });
+    }
+
+    /***
+     * US 01.09.01 notify entrant that they have been invited to be a co-organizer for an event
+     * @param eventId
+     * @param entrantId
+     * @param eventName
+     * @param cb
+     */
+    public void createCoOrganizerInviteNotification(String eventId, String entrantId, String eventName, RepoCallback<Void> cb) {
+        checkNotificationsEnabled(entrantId, enabled -> {
+            if (!enabled) {
+                cb.onSuccess(null);
+                return;
+            }
+            Map<String, Object> notification = new HashMap<>();
+            notification.put("eventId", eventId);
+            notification.put("eventName", eventName);
+            notification.put("entrantId", entrantId);
+            notification.put("message", "You have been invited to be a co-organizer for the event: " + eventName + ".");
+            notification.put("type", "CO_ORGANIZER_INVITE");
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("isRead", false);
+
+            db.collection("users")
+                    .document(entrantId)
+                    .collection("notification")
+                    .add(notification)
+                    .addOnSuccessListener(subDoc -> cb.onSuccess(null))
+                    .addOnFailureListener(cb::onError);
+
+        });
     }
 
     /**

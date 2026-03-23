@@ -12,6 +12,8 @@ public class EntrantProfile {
     private String phone;
     private ArrayList<String> registeredEventIds;
 
+    private boolean notificationsEnabled = true; // US 01.04.03
+
 
     public EntrantProfile() {
 
@@ -31,6 +33,7 @@ public class EntrantProfile {
         this.email = email;
         this.phone = phone;
         this.registeredEventIds = registeredEventIds;
+        this.notificationsEnabled = true; // US 01.04.03
     }
 
     /**
@@ -111,5 +114,19 @@ public class EntrantProfile {
      */
     public void setRegisteredEventIds(ArrayList<String> registeredEventIds) {
         this.registeredEventIds = registeredEventIds;
+    }
+
+    /***
+     * gets whether the entrant has notifications enabled
+     * @return true if notifications are enabled
+     */
+    public boolean isNotificationsEnabled() { return notificationsEnabled; } // US 01.04.03
+
+    /***
+     * sets notification preferences
+     * @param notificationsEnabled true to receive notifications
+     */
+    public void setNotificationsEnabled(boolean notificationsEnabled) { // US 01.04.03
+        this.notificationsEnabled = notificationsEnabled;
     }
 }

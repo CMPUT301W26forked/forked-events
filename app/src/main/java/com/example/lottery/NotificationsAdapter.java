@@ -52,6 +52,25 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         } else if ("SELECTED".equalsIgnoreCase(notification.getType())) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
+            holder.tvStatus.setText("Selected"); // ?
+            holder.btnAccept.setVisibility(View.VISIBLE);
+            holder.btnDecline.setVisibility(View.VISIBLE);
+        } else if ("NOT_SELECTED".equalsIgnoreCase(notification.getType())) { // US 01.04.02
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_tag_waitlisted);
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_waitlisted_text));
+            holder.tvStatus.setText("Not Selected");
+            holder.btnAccept.setVisibility(View.GONE);
+            holder.btnDecline.setVisibility(View.GONE);
+        } else if ("WAITLIST_INVITE".equalsIgnoreCase(notification.getType())) { // US 01.05.06
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
+            holder.tvStatus.setText("Waitlist Invite");
+            holder.btnAccept.setVisibility(View.VISIBLE);
+            holder.btnDecline.setVisibility(View.VISIBLE);
+        } else if ("CO_ORGANIZER_INVITE".equalsIgnoreCase(notification.getType())) { // US 01.09.01
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
+            holder.tvStatus.setText("Co-Organizer Invite");
             holder.btnAccept.setVisibility(View.VISIBLE);
             holder.btnDecline.setVisibility(View.VISIBLE);
         }
