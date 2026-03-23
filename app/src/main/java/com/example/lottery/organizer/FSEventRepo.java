@@ -210,7 +210,7 @@ public class FSEventRepo implements EventRepo {
      * @param message
      * @param cb
      */
-    public void sendMessageToEntrant(String eventId, String eventName, List<String> userIds, String message, RepoCallback<Void> cb) {
+    public void sendMessageToEntrant(String eventId, String eventName, List<String> userIds, String message, String audience, RepoCallback<Void> cb) {
         if (userIds == null || userIds.isEmpty()) {
             cb.onError(new IllegalArgumentException("No entrants found"));
             return;
@@ -219,6 +219,7 @@ public class FSEventRepo implements EventRepo {
         final int total = userIds.size();
         final int[] done = {0};
         final boolean[] failed = {false};
+        Timestamp createdAt = Timestamp.now();
 
         for (String id : userIds) {
             checkNotificationsEnabled(id, enabled -> {
@@ -229,7 +230,8 @@ public class FSEventRepo implements EventRepo {
                     notification.put("eventName", eventName);
             notification.put("message", message);
             notification.put("type", "MESSAGE");
-            notification.put("createdAt", Timestamp.now());
+            notification.put("audience", audience);
+            notification.put("createdAt", createdAt);
             notification.put("isRead", false);
             db.collection("users")
                     .document(id)

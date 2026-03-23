@@ -41,7 +41,7 @@ public class sendNotificationTest {
         fragment.sendMessage(false);
 
         verify(repo).getPendingEntrantIds(any(),any());
-        verify(repo).sendMessageToEntrant(any(), any(), eq(ids), eq("hello"), any());
+        verify(repo).sendMessageToEntrant(any(), any(), eq(ids), eq("hello"), eq("selected"), any());
     }
 
     @Test
@@ -68,6 +68,6 @@ public class sendNotificationTest {
         fragment.sendMessage(true);
 
         verify(repo).getCancelledEntrantIds(any(),any());
-        verify(repo).sendMessageToEntrant(any(), any(), eq(ids), eq("hello"), any());
+        verify(repo).sendMessageToEntrant(any(), any(), eq(ids), eq("hello"), eq("cancelled"), any());
     }
 }
