@@ -79,7 +79,7 @@ public class SendNotificationsFragment extends Fragment {
             repo.getPendingEntrantIds(EventId, new RepoCallback<List<String>>() {
                 @Override
                 public void onSuccess(List<String> ids) {
-                    repo.sendMessageToEntrant(EventId, EventName, ids, message, new RepoCallback<Void>() {
+                    repo.sendMessageToEntrant(EventId, EventName, ids, message, "selected", new RepoCallback<Void>() {
                         @Override
                         public void onSuccess(Void result) {
                             Toast.makeText(requireContext(), "Message Sent", Toast.LENGTH_SHORT).show();
@@ -102,7 +102,7 @@ public class SendNotificationsFragment extends Fragment {
             repo.getCancelledEntrantIds(EventId, new RepoCallback<List<String>>() {
                 @Override
                 public void onSuccess(List<String> ids) {
-                    repo.sendMessageToEntrant(EventId, EventName, ids, message, new RepoCallback<Void>() {
+                    repo.sendMessageToEntrant(EventId, EventName, ids, message, "cancelled", new RepoCallback<Void>() {
                         @Override
                         public void onSuccess(Void result) {
                             Toast.makeText(requireContext(), "Message Sent", Toast.LENGTH_SHORT).show();
