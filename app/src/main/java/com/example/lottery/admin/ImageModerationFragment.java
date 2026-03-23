@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,6 +25,7 @@ public class ImageModerationFragment extends Fragment {
     private RecyclerView recyclerView;
     private ModerationAdapter adapter;
     private List<ModerationItem> moderationList;
+    private TextView tvImageModCount;
     private FirebaseFirestore db;
     private FSEventRepo repo;
     private PosterStorageService storageService;
@@ -38,6 +40,7 @@ public class ImageModerationFragment extends Fragment {
         storageService = new PosterStorageService();
 
         recyclerView = view.findViewById(R.id.rvModerationList);
+        tvImageModCount = view.findViewById(R.id.tvImageModCount);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         moderationList = new ArrayList<>();
@@ -53,6 +56,15 @@ public class ImageModerationFragment extends Fragment {
         loadImagesFromFirestore();
 
         return view;
+    }
+
+    /**
+     * Updates the moderation count display
+     */
+    private void updateCount() {
+        if (tvImageModCount != null) {
+            tvImageModCount.setText(String.valueOf(moderationList.size()));
+        }
     }
 
     /**
@@ -74,6 +86,7 @@ public class ImageModerationFragment extends Fragment {
                         }
                     }
                     adapter.notifyDataSetChanged();
+                    updateCount();
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(getContext(), "Failed to load images: " + e.getMessage(), Toast.LENGTH_SHORT).show();
@@ -103,6 +116,7 @@ public class ImageModerationFragment extends Fragment {
                         if (idx >= 0) {
                             moderationList.remove(idx);
                             adapter.notifyItemRemoved(idx);
+                            updateCount();
                         }
                         Toast.makeText(getContext(), "Image removed", Toast.LENGTH_SHORT).show();
                     }
