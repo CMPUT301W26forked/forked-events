@@ -45,15 +45,11 @@ public class ModerationAdapter extends RecyclerView.Adapter<ModerationAdapter.Vi
                 .into(holder.ivPoster);
 
         // Remove button — use getAdapterPosition() at click time, not the stale bind-time position
-        holder.btnOption1.setOnClickListener(v -> {
+        holder.btnRemove.setOnClickListener(v -> {
             int currentPos = holder.getAdapterPosition();
             if (currentPos != RecyclerView.NO_ID && removeListener != null) {
                 removeListener.onRemove(item.getEventId(), currentPos);
             }
-        });
-
-        holder.btnOption2.setOnClickListener(v -> {
-            // Reserved for future use
         });
     }
 
@@ -65,14 +61,13 @@ public class ModerationAdapter extends RecyclerView.Adapter<ModerationAdapter.Vi
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
         ImageView ivPoster;
-        MaterialButton btnOption1, btnOption2;
+        MaterialButton btnRemove;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvModerationTitle);
             ivPoster = itemView.findViewById(R.id.ivPosterThumbnail);
-            btnOption1 = itemView.findViewById(R.id.btnOption1);
-            btnOption2 = itemView.findViewById(R.id.btnOption2);
+            btnRemove = itemView.findViewById(R.id.btnRemove);
         }
     }
 }

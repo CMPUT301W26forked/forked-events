@@ -12,9 +12,11 @@
         android:orientation="vertical"
         android:paddingEnd="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnOption1"
+        app:layout_constraintEnd_toStartOf="@+id/btnRemove"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
 
         <TextView
             android:id="@+id/tvModerationTitle"
@@ -22,7 +24,7 @@
             android:layout_height="wrap_content"
             android:text="Event Name"
             android:textColor="@color/black"
-            android:textSize="14sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <ImageView
@@ -30,37 +32,21 @@
             android:layout_width="match_parent"
             android:layout_height="160dp"
             android:layout_marginTop="8dp"
+            android:layout_marginBottom="14dp"
             android:contentDescription="Event poster thumbnail"
             android:scaleType="centerCrop" />
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnOption1"
+        android:id="@+id/btnRemove"
         style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-        android:layout_width="70dp"
-        android:layout_height="32dp"
-        android:layout_marginEnd="6dp"
-        android:backgroundTint="#1A1A1A"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:text="Remove"
-        android:textAllCaps="false"
-        android:textSize="11sp"
-        app:cornerRadius="6dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnOption2"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnOption2"
-        style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
-        android:layout_width="70dp"
+        android:layout_width="90dp"
         android:layout_height="32dp"
         android:layout_marginEnd="8dp"
         android:backgroundTint="#1A1A1A"
         android:insetTop="0dp"
         android:insetBottom="0dp"
-        android:text="Option"
+        android:text="Remove"
         android:textAllCaps="false"
         android:textSize="11sp"
         app:cornerRadius="6dp"
