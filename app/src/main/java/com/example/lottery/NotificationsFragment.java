@@ -68,7 +68,10 @@ public class NotificationsFragment extends Fragment {
 
                     for (QueryDocumentSnapshot doc : qs) {
                         Notification notification = doc.toObject(Notification.class);
-                        notificationList.add(notification);
+                        if (notification != null) {
+                            notification.setNotificationId(doc.getId());
+                            notificationList.add(notification);
+                        }
                     }
                     adapter.notifyDataSetChanged();
                 })
