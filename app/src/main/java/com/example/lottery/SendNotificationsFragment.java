@@ -22,13 +22,15 @@ import androidx.annotation.Nullable;
  */
 public class SendNotificationsFragment extends Fragment {
     private String EventId;
+    private String EventName = "Event";
     private FSEventRepo repo;
     private EditText etmsg;
 
-    public static SendNotificationsFragment newInstance(String eventId) {
+    public static SendNotificationsFragment newInstance(String eventId, String EventName) {
         SendNotificationsFragment fragment = new SendNotificationsFragment();
         Bundle args = new Bundle();
         args.putString("event_id", eventId);
+        args.putString("eventName", EventName);
         fragment.setArguments(args);
         return fragment;
     }
@@ -40,14 +42,15 @@ public class SendNotificationsFragment extends Fragment {
 
         if (getArguments() != null) {
             EventId = getArguments().getString("event_id");
+            EventName = getArguments().getString("eventName", "Event");
         }
 
         repo = new FSEventRepo();
         etmsg = view.findViewById(R.id.etMessage);
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> getParentFragmentManager().popBackStack());
-
-        view.findViewById(R.id.btnSelectSelected).setOnClickListener(v -> sendMessage());
+        view.findViewById(R.id.btnSelectCancelled).setOnClickListener(v -> sendMessage(true));
+        view.findViewById(R.id.btnSelectSelected).setOnClickListener(v -> sendMessage(false));
 
         return view;
     }
@@ -60,7 +63,11 @@ public class SendNotificationsFragment extends Fragment {
         this.etmsg = etmsg;
     }
 
-    public void sendMessage() {
+    /**
+     * send message to specified group
+     * @param sendToCancelled
+     */
+    public void sendMessage(Boolean sendToCancelled) {
         String message = etmsg.getText().toString().trim();
 
         if (message.isEmpty()) {
@@ -68,27 +75,52 @@ public class SendNotificationsFragment extends Fragment {
             return;
         }
 
-        repo.getPendingEntrantIds(EventId, new RepoCallback<List<String>>() {
-            @Override
-            public void onSuccess(List<String> ids) {
-                repo.sendMessageToPending(EventId, ids, message, new RepoCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        Toast.makeText(requireContext(), "Message Sent", Toast.LENGTH_SHORT).show();
-                        etmsg.setText("");
-                    }
+        if (!sendToCancelled) {
+            repo.getPendingEntrantIds(EventId, new RepoCallback<List<String>>() {
+                @Override
+                public void onSuccess(List<String> ids) {
+                    repo.sendMessageToEntrant(EventId, EventName, ids, message, "selected", new RepoCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void result) {
+                            Toast.makeText(requireContext(), "Message Sent", Toast.LENGTH_SHORT).show();
+                            etmsg.setText("");
+                        }
 
-                    @Override
-                    public void onError(Exception e) {
-                        Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
+                        @Override
+                        public void onError(Exception e) {
+                            Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
 
-            @Override
-            public void onError(Exception e) {
-                Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                @Override
+                public void onError(Exception e) {
+                    Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else {
+            repo.getCancelledEntrantIds(EventId, new RepoCallback<List<String>>() {
+                @Override
+                public void onSuccess(List<String> ids) {
+                    repo.sendMessageToEntrant(EventId, EventName, ids, message, "cancelled", new RepoCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void result) {
+                            Toast.makeText(requireContext(), "Message Sent", Toast.LENGTH_SHORT).show();
+                            etmsg.setText("");
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    Toast.makeText(requireContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
     }
 }

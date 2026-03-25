@@ -1,10 +1,12 @@
 package com.example.lottery;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
@@ -12,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.lottery.Entrant.Activity.EntrantEventDetailsFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -20,9 +24,15 @@ import java.util.Locale;
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.NotificationViewHolder> {
 
     private List<Notification> notificationList;
+    private final String entrantId;
+    private final Context context;
+    private final FirebaseFirestore db;
 
-    public NotificationsAdapter(List<Notification> notificationList) {
+    public NotificationsAdapter(List<Notification> notificationList, String entrantId, Context context) {
         this.notificationList = notificationList;
+        this.entrantId = entrantId;
+        this.context = context;
+        this.db = FirebaseFirestore.getInstance();
     }
 
     @NonNull
@@ -52,9 +62,65 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         } else if ("SELECTED".equalsIgnoreCase(notification.getType())) {
             holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
             holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
+            holder.tvStatus.setText("Selected"); // ?
+            holder.btnAccept.setVisibility(View.VISIBLE);
+            holder.btnDecline.setVisibility(View.VISIBLE);
+        } else if ("NOT_SELECTED".equalsIgnoreCase(notification.getType())) { // US 01.04.02
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_tag_waitlisted);
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_waitlisted_text));
+            holder.tvStatus.setText("Not Selected");
+            holder.btnAccept.setVisibility(View.GONE);
+            holder.btnDecline.setVisibility(View.GONE);
+        } else if ("WAITLIST_INVITE".equalsIgnoreCase(notification.getType())) { // US 01.05.06
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
+            holder.tvStatus.setText("Waitlist Invite");
+            holder.btnAccept.setVisibility(View.VISIBLE);
+            holder.btnDecline.setVisibility(View.VISIBLE);
+        } else if ("CO_ORGANIZER_INVITE".equalsIgnoreCase(notification.getType())) { // US 01.09.01
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_event_tag_open);
+            holder.tvStatus.setTextColor(holder.itemView.getContext().getResources().getColor(R.color.tag_invitation_text));
+            holder.tvStatus.setText("Co-Organizer Invite");
             holder.btnAccept.setVisibility(View.VISIBLE);
             holder.btnDecline.setVisibility(View.VISIBLE);
         }
+
+        holder.btnAccept.setOnClickListener(v -> {
+            String eventId = notification.getEventId();
+            if (eventId == null || entrantId == null) {
+                Toast.makeText(context, "Missing event or user info", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            db.collection("events").document(eventId)
+                    .update("registeredEntrantIds", FieldValue.arrayUnion(entrantId),
+                            "pendingEntrantIds", FieldValue.arrayRemove(entrantId),
+                            "confirmedCount", FieldValue.increment(1))
+                    .addOnSuccessListener(unused -> {
+                        holder.tvStatus.setText("Accepted");
+                        holder.btnAccept.setEnabled(false);
+                        holder.btnDecline.setEnabled(false);
+                        Toast.makeText(context, "You have accepted the invitation", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(context, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        });
+
+        holder.btnDecline.setOnClickListener(v -> {
+            String eventId = notification.getEventId();
+            if (eventId == null || entrantId == null) {
+                Toast.makeText(context, "Missing event or user info", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            db.collection("events").document(eventId)
+                    .update("cancelledEntrantIds", FieldValue.arrayUnion(entrantId),
+                            "pendingEntrantIds", FieldValue.arrayRemove(entrantId))
+                    .addOnSuccessListener(unused -> {
+                        holder.tvStatus.setText("Declined");
+                        holder.btnAccept.setEnabled(false);
+                        holder.btnDecline.setEnabled(false);
+                        Toast.makeText(context, "You have declined the invitation", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> Toast.makeText(context, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        });
 
         holder.btnViewDetails.setOnClickListener(v -> {
             if (notification.getEventId() != null) {
