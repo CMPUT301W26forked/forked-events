@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
@@ -33,7 +34,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
-
         Event event = eventList.get(position);
 
         holder.tvEventTitle.setText(event.getTitle());
@@ -46,13 +46,15 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.tvJoined.setText(event.getJoinedCount());
 
         holder.eventCard.setOnClickListener(v -> {
-            listener.onEventClick(event);
+            if (listener != null) {
+                listener.onEventClick(event);
+            }
         });
     }
 
     @Override
     public int getItemCount() {
-        return eventList.size();
+        return eventList == null ? 0 : eventList.size();
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
@@ -64,7 +66,6 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             super(itemView);
 
             eventCard = itemView.findViewById(R.id.eventCard);
-
             tvEventTitle = itemView.findViewById(R.id.tvEventTitle);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvDescription = itemView.findViewById(R.id.tvDescription);
