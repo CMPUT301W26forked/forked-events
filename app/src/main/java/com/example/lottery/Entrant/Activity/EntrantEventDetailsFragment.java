@@ -13,21 +13,30 @@ import android.widget.Toast;
 
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.lottery.Common.Utils.DeviceManager;
+import com.example.lottery.Entrant.Activity.CommentsAdapter;
+import com.example.lottery.Entrant.Activity.Comment;
 import com.example.lottery.Entrant.Repo.WaitlistCallback;
 import com.example.lottery.Entrant.Service.EntrantService;
 import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.Query;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +53,14 @@ public class EntrantEventDetailsFragment extends Fragment {
     public String entrantId;
     public WaitlistService waitlistService;
     private String eventStatus = "Open";
+
+    private RecyclerView rvComments;
+    private TextInputEditText etComment;
+    private MaterialButton btnPostComment;
+
+    private List<Comment> commentList;
+    private CommentsAdapter commentsAdapter;
+    private ListenerRegistration commentsListener;
 
     public EntrantEventDetailsFragment() {
     }
@@ -68,9 +85,18 @@ public class EntrantEventDetailsFragment extends Fragment {
         TextView tvOrganizer = view.findViewById(R.id.tvOrganizer);
         ImageView ivEventPoster = view.findViewById(R.id.ivEventPoster);
 
+        rvComments = view.findViewById(R.id.rvComments);
+        etComment = view.findViewById(R.id.etComment);
+        btnPostComment = view.findViewById(R.id.btnPostComment);
+
         db = FirebaseFirestore.getInstance();
         entrantService = new EntrantService();
         waitlistService = new WaitlistService();
+
+        commentList = new ArrayList<>();
+        commentsAdapter = new CommentsAdapter(commentList);
+        rvComments.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvComments.setAdapter(commentsAdapter);
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
@@ -87,6 +113,8 @@ public class EntrantEventDetailsFragment extends Fragment {
                 tvTotalSpots, tvWaitlist, tvConfirmed,
                 tvEventDates, tvLocation, tvOrganizer,
                 ivEventPoster, btnJoin);
+
+        loadComments();
 
         btnBack.setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager().popBackStack()
@@ -113,7 +141,95 @@ public class EntrantEventDetailsFragment extends Fragment {
             }
         });
 
+        btnPostComment.setOnClickListener(v -> postComment());
+
         return view;
+    }
+
+    private void loadComments() {
+        if (eventId == null || eventId.isEmpty()) {
+            Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        commentsListener = db.collection("events")
+                .document(eventId)
+                .collection("comments")
+                .orderBy("timestamp", Query.Direction.ASCENDING)
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Toast.makeText(getContext(), "Failed to load comments", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    commentList.clear();
+
+                    if (value != null) {
+                        for (DocumentSnapshot doc : value.getDocuments()) {
+                            Comment comment = doc.toObject(Comment.class);
+                            if (comment != null) {
+                                commentList.add(comment);
+                            }
+                        }
+                    }
+
+                    commentsAdapter.notifyDataSetChanged();
+
+                    if (!commentList.isEmpty()) {
+                        rvComments.scrollToPosition(commentList.size() - 1);
+                    }
+                });
+    }
+
+    private void postComment() {
+        String commentText = etComment.getText() != null
+                ? etComment.getText().toString().trim()
+                : "";
+
+        if (commentText.isEmpty()) {
+            etComment.setError("Comment cannot be empty");
+            return;
+        }
+
+        if (eventId == null || eventId.isEmpty()) {
+            Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("users")
+                .document(entrantId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String userName = documentSnapshot.getString("name");
+
+                    if (userName == null || userName.trim().isEmpty()) {
+                        userName = documentSnapshot.getString("username");
+                    }
+
+                    if (userName == null || userName.trim().isEmpty()) {
+                        userName = "Anonymous User";
+                    }
+
+                    Comment comment = new Comment(
+                            entrantId,
+                            userName,
+                            commentText,
+                            Timestamp.now()
+                    );
+
+                    db.collection("events")
+                            .document(eventId)
+                            .collection("comments")
+                            .add(comment)
+                            .addOnSuccessListener(documentReference -> {
+                                etComment.setText("");
+                                Toast.makeText(getContext(), "Comment posted", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(getContext(), "Failed to post comment", Toast.LENGTH_SHORT).show());
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to get user info", Toast.LENGTH_SHORT).show());
     }
 
     private void loadEventDetails(TextView tvEventName, TextView tvDescription,
@@ -190,12 +306,6 @@ public class EntrantEventDetailsFragment extends Fragment {
                 );
     }
 
-    /***
-     * Allows entrants to join waitlist.
-     * Also checks the waitlist capacity set by the event organizer.
-     * @param btnJoin Button that allows entrant to join waitlist.
-     */
-
     private void joinWaitlist(MaterialButton btnJoin) {
         if (!"Open".equalsIgnoreCase(eventStatus)) {
             Toast.makeText(getContext(), "Registration is closed.", Toast.LENGTH_SHORT).show();
@@ -210,7 +320,6 @@ public class EntrantEventDetailsFragment extends Fragment {
                 Toast.makeText(getContext(), "Waitlist is full.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
 
             btnJoin.setEnabled(false);
 
@@ -262,11 +371,6 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .add(notification);
     }
 
-    /***
-     * Allows entrants to leave waitlist.
-     * @param btnJoin Button that allows entrant to leave waitlist.
-     */
-
     private void leaveWaitlist(MaterialButton btnJoin) {
         btnJoin.setEnabled(false);
 
@@ -312,10 +416,6 @@ public class EntrantEventDetailsFragment extends Fragment {
         ));
     }
 
-    /***
-     * Asks entrant if they want to remain on waitlist after they did not get selected.
-     * @param btnJoin The join/leave button.
-     */
     public void showStayInList(MaterialButton btnJoin) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Not Selected")
@@ -331,5 +431,13 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .setNegativeButton("No", (dialog, which) -> leaveWaitlist(btnJoin))
                 .setCancelable(false)
                 .show();
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (commentsListener != null) {
+            commentsListener.remove();
+        }
     }
 }
