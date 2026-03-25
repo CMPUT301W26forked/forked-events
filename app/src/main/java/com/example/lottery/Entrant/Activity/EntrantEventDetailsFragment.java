@@ -168,6 +168,14 @@ public class EntrantEventDetailsFragment extends Fragment {
                                 .into(ivEventPoster);
                     }
 
+                    List<String> registeredIds = (List<String>) doc.get("registeredEntrantIds");
+                    List<String> cancelledIds = (List<String>) doc.get("cancelledEntrantIds");
+                    if ((registeredIds != null && registeredIds.contains(entrantId))
+                            || (cancelledIds != null && cancelledIds.contains(entrantId))) {
+                        btnJoin.setVisibility(View.GONE);
+                        return;
+                    }
+
                     List<String> waitlistedIds = (List<String>) doc.get("waitlistedEntrantIds");
                     if (waitlistedIds != null && waitlistedIds.contains(entrantId)) {
                         isOnWaitlist = true;

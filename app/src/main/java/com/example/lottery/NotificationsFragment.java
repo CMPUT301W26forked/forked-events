@@ -34,7 +34,8 @@ public class NotificationsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         notificationList = new ArrayList<>();
-        adapter = new NotificationsAdapter(notificationList);
+        String uid = FirebaseAuth.getInstance().getUid();
+        adapter = new NotificationsAdapter(notificationList, uid, requireContext());
         recyclerView.setAdapter(adapter);
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {

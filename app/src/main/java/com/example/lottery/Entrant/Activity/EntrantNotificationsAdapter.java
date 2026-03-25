@@ -2,6 +2,7 @@ package com.example.lottery.Entrant.Activity;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,7 +61,8 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
         EntrantInvitation invitation = invitationList.get(position);
 
         // Logic for "Waitlisted" status vs "Invitation/Selected" status
-        if ("WAITLISTED".equalsIgnoreCase(invitation.getStatus())) {
+        String status = invitation.getStatus();
+        if ("WAITLISTED".equalsIgnoreCase(status)) {
             holder.tvNotificationTitle.setText("Waitlist Confirmation");
             holder.tvNotificationEvent.setText("You joined the waitlist for Event ID: " + invitation.getEventId());
             holder.btnAccept.setVisibility(View.GONE);
@@ -70,49 +72,79 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
             holder.tvNotificationEvent.setText("Event ID: " + invitation.getEventId());
             holder.btnAccept.setVisibility(View.VISIBLE);
             holder.btnDecline.setVisibility(View.VISIBLE);
+            // Disable buttons if already acted on
+            boolean alreadyActed = "ACCEPTED".equalsIgnoreCase(status) || "DECLINED".equalsIgnoreCase(status);
+            holder.btnAccept.setEnabled(!alreadyActed);
+            holder.btnDecline.setEnabled(!alreadyActed);
         }
         
         holder.tvNotificationDate.setText("Date unavailable");
         holder.tvNotificationStatus.setText(invitation.getStatus());
 
         holder.btnAccept.setOnClickListener(v -> {
+            Log.d("Invite", "Accept pressed — invitationId=" + invitation.getInvitationId()
+                    + " eventId=" + invitation.getEventId()
+                    + " entrantId=" + invitation.getEntrantId());
             db.collection("invitations")
                     .document(invitation.getInvitationId())
                     .update("status", "ACCEPTED")
                     .addOnSuccessListener(unused -> {
+                        Log.d("Invite", "Invitation status updated to ACCEPTED");
+                        db.collection("events").document(invitation.getEventId())
+                                .update("registeredEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()),
+                                        "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                        "confirmedCount", FieldValue.increment(1))
+                                .addOnSuccessListener(v2 -> {
+                                    Log.d("Invite", "Event arrays updated for ACCEPT");
+                                    holder.tvNotificationStatus.setText("ACCEPTED");
+                                    holder.btnAccept.setEnabled(false);
+                                    holder.btnDecline.setEnabled(false);
+                                    Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e("Invite", "Failed to update event arrays on accept", e);
+                                    Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
                         db.collection("events").document(invitation.getEventId())
                                 .collection("entrants").document(invitation.getEntrantId())
-                                .update("status", "CONFIRMED")
-                                .addOnSuccessListener(aVoid -> {
-                                    db.collection("events").document(invitation.getEventId())
-                                            .update("registeredEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()),
-                                                    "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
-                                                    "confirmedCount", FieldValue.increment(1))
-                                            .addOnSuccessListener(v2 -> {
-                                                holder.tvNotificationStatus.setText("ACCEPTED");
-                                                Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
-                                            });
-                                });
+                                .update("status", "CONFIRMED");
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("Invite", "Failed to update invitation status to ACCEPTED", e);
+                        Toast.makeText(context, "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         });
 
         holder.btnDecline.setOnClickListener(v -> {
+            Log.d("Invite", "Decline pressed — invitationId=" + invitation.getInvitationId()
+                    + " eventId=" + invitation.getEventId()
+                    + " entrantId=" + invitation.getEntrantId());
             db.collection("invitations")
                     .document(invitation.getInvitationId())
                     .update("status", "DECLINED")
                     .addOnSuccessListener(unused -> {
+                        Log.d("Invite", "Invitation status updated to DECLINED");
+                        db.collection("events").document(invitation.getEventId())
+                                .update("pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                        "cancelledEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()))
+                                .addOnSuccessListener(v2 -> {
+                                    Log.d("Invite", "Event arrays updated for DECLINE");
+                                    holder.tvNotificationStatus.setText("DECLINED");
+                                    holder.btnAccept.setEnabled(false);
+                                    holder.btnDecline.setEnabled(false);
+                                    Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e("Invite", "Failed to update event arrays on decline", e);
+                                    Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
                         db.collection("events").document(invitation.getEventId())
                                 .collection("entrants").document(invitation.getEntrantId())
-                                .update("status", "CANCELLED")
-                                .addOnSuccessListener(aVoid -> {
-                                    db.collection("events").document(invitation.getEventId())
-                                            .update("pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
-                                                    "cancelledEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()))
-                                            .addOnSuccessListener(v2 -> {
-                                                holder.tvNotificationStatus.setText("DECLINED");
-                                                Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
-                                            });
-                                });
+                                .update("status", "CANCELLED");
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e("Invite", "Failed to update invitation status to DECLINED", e);
+                        Toast.makeText(context, "Failed to decline: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         });
 
