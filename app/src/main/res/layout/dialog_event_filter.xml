@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Available from"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/etAvailableFrom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:focusable="false"
+        android:clickable="true"
+        android:hint="Select start date"
+        android:inputType="none"
+        android:padding="12dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Available to"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/etAvailableTo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:focusable="false"
+        android:clickable="true"
+        android:hint="Select end date"
+        android:inputType="none"
+        android:padding="12dp" />
+
+    <CheckBox
+        android:id="@+id/cbSpotsAvailable"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Only show events with spots left" />
+
+</LinearLayout>
