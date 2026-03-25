@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,7 +32,7 @@ public class EntrantInvitationsFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_notifications, container, false);
@@ -60,7 +61,6 @@ public class EntrantInvitationsFragment extends Fragment {
 
         db.collection("invitations")
                 .whereEqualTo("entrantId", entrantId)
-                .whereEqualTo("status", "PENDING")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     invitationList.clear();

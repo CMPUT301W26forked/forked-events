@@ -31,7 +31,7 @@ public class ViewListsFragment extends Fragment {
     private EntrantAdapter adapter;
     private List<EntrantInfo> entrantList = new ArrayList<>();
     private FirebaseFirestore db;
-    private TextView tvListTitle, btnWaitlist, btnPending, btnFinalList;
+    private TextView tvListTitle, btnWaitlist, btnPending, btnFinalList, btnCancelled;
 
     public static ViewListsFragment newInstance(String eventId, String eventName) {
         ViewListsFragment fragment = new ViewListsFragment();
@@ -58,6 +58,7 @@ public class ViewListsFragment extends Fragment {
         btnWaitlist = view.findViewById(R.id.btnWaitlist);
         btnPending = view.findViewById(R.id.btnPending);
         btnFinalList = view.findViewById(R.id.btnFinalList);
+        btnCancelled = view.findViewById(R.id.btnCancelled);
         rvEntrants = view.findViewById(R.id.rvEntrants);
 
         rvEntrants.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -69,6 +70,7 @@ public class ViewListsFragment extends Fragment {
         btnWaitlist.setOnClickListener(v -> loadListFromArray("waitlistedEntrantIds", "Waitlist"));
         btnPending.setOnClickListener(v -> loadListFromArray("pendingEntrantIds", "Pending List"));
         btnFinalList.setOnClickListener(v -> loadListFromArray("registeredEntrantIds", "Final List"));
+        btnCancelled.setOnClickListener(v -> loadListFromArray("cancelledEntrantIds", "Cancelled List"));
 
         // Default load
         loadListFromArray("waitlistedEntrantIds", "Waitlist");

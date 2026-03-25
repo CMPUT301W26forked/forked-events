@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Lottery</string>
+    <string name="temp_logout_admin">temporary button to log out as admin</string>
+    <string name="back">Back</string>
+    <string name="show_qr">Show QR</string>
+    <string name="join_waitlist">Join Waitlist</string>
+    <string name="post_comment">Post Comment</string>
+    <string name="write_comment">Write a comment</string>
+    <string name="event_poster">Event poster</string>
 </resources>

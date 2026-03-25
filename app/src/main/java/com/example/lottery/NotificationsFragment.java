@@ -34,7 +34,8 @@ public class NotificationsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         notificationList = new ArrayList<>();
-        adapter = new NotificationsAdapter(notificationList);
+        String uid = FirebaseAuth.getInstance().getUid();
+        adapter = new NotificationsAdapter(notificationList, uid, requireContext());
         recyclerView.setAdapter(adapter);
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
@@ -67,7 +68,10 @@ public class NotificationsFragment extends Fragment {
 
                     for (QueryDocumentSnapshot doc : qs) {
                         Notification notification = doc.toObject(Notification.class);
-                        notificationList.add(notification);
+                        if (notification != null) {
+                            notification.setNotificationId(doc.getId());
+                            notificationList.add(notification);
+                        }
                     }
                     adapter.notifyDataSetChanged();
                 })

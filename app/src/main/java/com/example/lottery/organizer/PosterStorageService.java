@@ -37,4 +37,16 @@ public class PosterStorageService {
                 )
                 .addOnFailureListener(cb::onError);
     }
+
+    /**
+     * deletes a poster image from storage
+     * @param eventId unique identifier for the event
+     * @param cb callback for success or error
+     */
+    public void deletePoster(String eventId, RepoCallback<Void> cb) {
+        posterRef(eventId)
+                .delete()
+                .addOnSuccessListener(v -> cb.onSuccess(null))
+                .addOnFailureListener(cb::onError);
+    }
 }

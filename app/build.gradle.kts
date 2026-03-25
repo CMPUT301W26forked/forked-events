@@ -37,12 +37,18 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    debugImplementation("androidx.fragment:fragment-testing:1.8.6")
 
     testImplementation(libs.junit)
-    androidTestImplementation(libs.ext.junit)
-    androidTestImplementation(libs.espresso.core)
     testImplementation("org.mockito:mockito-core:4.11.0")
+
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.fragment:fragment-testing:1.8.6")
+
+    debugImplementation("androidx.fragment:fragment-testing-manifest:1.8.6")
 
     implementation("com.github.bumptech.glide:glide:4.16.0")
 

@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,6 +43,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvProfileName, tvProfileEmail, tvProfilePhone;
     private Button btnEditDetails;
     private Button btnLogout;
+    private Switch switchNotifications;
 
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
@@ -51,6 +53,7 @@ public class ProfileFragment extends Fragment {
     private String currentName = "";
     private String currentEmail = "";
     private String currentPhone = "";
+
 
     @Nullable
     @Override
@@ -77,6 +80,7 @@ public class ProfileFragment extends Fragment {
         tvProfilePhone = view.findViewById(R.id.tvProfilePhone);
         btnEditDetails = view.findViewById(R.id.btnEditDetails);
         btnLogout = view.findViewById(R.id.btnLogout);
+        switchNotifications = view.findViewById(R.id.switchNotifications);
 
         recyclerView = view.findViewById(R.id.rvMyEvents);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -139,6 +143,21 @@ public class ProfileFragment extends Fragment {
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
                         currentName = safeString(documentSnapshot.getString("name"));
+                        Boolean notifEnabled = documentSnapshot.getBoolean("notificationsEnabled");
+                        boolean isEnabled = (notifEnabled == null) || notifEnabled; // default true
+                        switchNotifications.setChecked(isEnabled);
+
+                        switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                            db.collection("users")
+                                    .document(userId)
+                                    .update("notificationsEnabled", isChecked)
+                                    .addOnSuccessListener(unused ->
+                                            Toast.makeText(getContext(),
+                                                    isChecked ? "Notifications enabled" : "Notifications disabled",
+                                                    Toast.LENGTH_SHORT).show())
+                                    .addOnFailureListener(e ->
+                                            Toast.makeText(getContext(), "Failed to update preference", Toast.LENGTH_SHORT).show());
+                        });
                         currentPhone = safeString(documentSnapshot.getString("phone"));
 
                         if (isGuest) {
