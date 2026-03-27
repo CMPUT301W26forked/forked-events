@@ -34,7 +34,7 @@
         <ImageView
             android:id="@+id/ivEventPoster"
             android:layout_width="0dp"
-            android:layout_height="220dp"
+            android:layout_height="300dp"
             android:layout_marginTop="16dp"
             android:contentDescription="@string/event_poster"
             android:scaleType="centerCrop"
