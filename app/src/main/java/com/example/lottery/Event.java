@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 /**
- * event model
+ * event model for firestore and app display
  */
 public class Event {
     private String eventId;
@@ -19,6 +19,7 @@ public class Event {
     private String spots;
     private String waitlistInfo;
     private String joinedCount;
+    private boolean isPrivate;
 
     // fields matching firestore
     private String name;
@@ -321,5 +322,21 @@ public class Event {
      */
     public void setRegistrationEnd(Timestamp registrationEnd) {
         this.registrationEnd = registrationEnd;
+    }
+
+    /**
+     * gets whether event is private
+     * @return true if private
+     */
+    public boolean isPrivate() {
+        return isPrivate;
+    }
+
+    /**
+     * sets whether event is private
+     * @param isPrivate privacy status
+     */
+    public void setPrivate(boolean isPrivate) {
+        this.isPrivate = isPrivate;
     }
 }

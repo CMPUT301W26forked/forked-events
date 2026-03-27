@@ -48,7 +48,7 @@ public class EventBuilderFragment extends Fragment {
     private ImageView ivPosterPreview;
     private TextView tvRegPeriod;
     private EditText etEventName, etLocation, etCapacity, etWaitingListLimit, etDescription, etOrganizer;
-    private CheckBox cbGeoLocation;
+    private CheckBox cbGeoLocation, cbIsPrivate;
 
     private Timestamp startTimestamp;
     private Timestamp endTimestamp;
@@ -81,6 +81,7 @@ public class EventBuilderFragment extends Fragment {
         etCapacity = view.findViewById(R.id.etCapacity);
         etWaitingListLimit = view.findViewById(R.id.etWaitingListLimit);
         cbGeoLocation = view.findViewById(R.id.cbGeoLocation);
+        cbIsPrivate = view.findViewById(R.id.cbIsPrivate);
         ivPosterPreview = view.findViewById(R.id.ivPosterPreview);
         tvRegPeriod = view.findViewById(R.id.btnRegPeriod);
 
@@ -161,6 +162,7 @@ public class EventBuilderFragment extends Fragment {
         eventData.put("status", "open");
         eventData.put("confirmedCount", 0);
         eventData.put("waitlistCount", 0);
+        eventData.put("isPrivate", cbIsPrivate.isChecked());
         
         // Arrays for entrant tracking
         eventData.put("waitlistedEntrantIds", new ArrayList<String>());
@@ -220,6 +222,9 @@ public class EventBuilderFragment extends Fragment {
                 
                 Long waitListLimit = result.getLong("waitListLimit");
                 if (waitListLimit != null) etWaitingListLimit.setText(String.valueOf(waitListLimit));
+
+                Boolean isPrivate = result.getBoolean("isPrivate");
+                if (isPrivate != null) cbIsPrivate.setChecked(isPrivate);
             }
             @Override
             public void onError(Exception e) {

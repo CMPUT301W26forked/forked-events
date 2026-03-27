@@ -18,6 +18,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,12 +78,6 @@ public class ViewListsFragment extends Fragment {
         return view;
     }
 
-    /**
-     * Logic:
-     * 1. Get the event document.
-     * 2. Get the array field specified (e.g., waitlistedEntrantIds).
-     * 3. For each ID in that array, fetch the user's name from the 'users' collection.
-     */
     private void loadListFromArray(String arrayField, String titleSuffix) {
         tvListTitle.setText(eventName + " " + titleSuffix);
         
@@ -96,7 +91,6 @@ public class ViewListsFragment extends Fragment {
                 return;
             }
 
-            // Fetch user names for all IDs in the array
             List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
             for (String uid : entrantIds) {
                 tasks.add(db.collection("users").document(uid).get());
@@ -109,8 +103,9 @@ public class ViewListsFragment extends Fragment {
                         DocumentSnapshot userDoc = task.getResult();
                         if (userDoc.exists()) {
                             String name = userDoc.getString("name");
+                            String email = userDoc.getString("email");
                             String uid = userDoc.getId();
-                            entrantList.add(new EntrantInfo(uid, name != null ? name : "Unknown User"));
+                            entrantList.add(new EntrantInfo(uid, name != null ? name : "Unknown User", email != null ? email : "No email"));
                         }
                     }
                 }
@@ -122,10 +117,12 @@ public class ViewListsFragment extends Fragment {
     private static class EntrantInfo {
         String id;
         String name;
+        String email;
 
-        EntrantInfo(String id, String name) {
+        EntrantInfo(String id, String name, String email) {
             this.id = id;
             this.name = name;
+            this.email = email;
         }
     }
 
@@ -139,13 +136,18 @@ public class ViewListsFragment extends Fragment {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_user_selection, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_profile, parent, false);
             return new ViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            holder.tvUserName.setText(entrants.get(position).name);
+            EntrantInfo entrant = entrants.get(position);
+            holder.tvName.setText(entrant.name);
+            holder.tvEmail.setText(entrant.email);
+            holder.btnView.setOnClickListener(v -> {
+                // Potential navigation to profile details
+            });
         }
 
         @Override
@@ -154,11 +156,14 @@ public class ViewListsFragment extends Fragment {
         }
 
         static class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvUserName;
+            TextView tvName, tvEmail;
+            MaterialButton btnView;
 
             ViewHolder(@NonNull View itemView) {
                 super(itemView);
-                tvUserName = itemView.findViewById(R.id.tvUserName);
+                tvName = itemView.findViewById(R.id.tvProfileName);
+                tvEmail = itemView.findViewById(R.id.tvProfileEmail);
+                btnView = itemView.findViewById(R.id.btnViewProfile);
             }
         }
     }
