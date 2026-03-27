@@ -172,36 +172,60 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             return;
         }
 
-        db.collection("events").document(notification.getEventId())
-                .update(
-                        "registeredEntrantIds", FieldValue.arrayUnion(entrantId),
-                        "pendingEntrantIds", FieldValue.arrayRemove(entrantId),
-                        "cancelledEntrantIds", FieldValue.arrayRemove(entrantId),
-                        "confirmedCount", FieldValue.increment(1)
-                )
-                .addOnSuccessListener(unused ->
-                        notificationRef.update("status", "ACCEPTED")
-                                .addOnSuccessListener(unused2 -> {
-                                    notification.setStatus("ACCEPTED");
-                                    bindStatusAndButtons(holder, notification);
+        // Check if entrant is still in pending list (not cancelled by organizer)
+        db.collection("events").document(notification.getEventId()).get()
+                .addOnSuccessListener(eventDoc -> {
+                    if (!eventDoc.exists()) {
+                        holder.btnAccept.setEnabled(true);
+                        holder.btnDecline.setEnabled(true);
+                        Toast.makeText(context, "Event not found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-                                    int adapterPosition = holder.getAdapterPosition();
-                                    if (adapterPosition != RecyclerView.NO_POSITION) {
-                                        notifyItemChanged(adapterPosition);
-                                    }
+                    List<String> pendingIds = (List<String>) eventDoc.get("pendingEntrantIds");
+                    if (pendingIds == null || !pendingIds.contains(entrantId)) {
+                        holder.btnAccept.setEnabled(true);
+                        holder.btnDecline.setEnabled(true);
+                        Toast.makeText(context, "This invitation is no longer valid", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-                                    Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
-                                })
-                                .addOnFailureListener(e -> {
-                                    holder.btnAccept.setEnabled(true);
-                                    holder.btnDecline.setEnabled(true);
-                                    Toast.makeText(context, "Failed to update notification: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                })
-                )
+                    db.collection("events").document(notification.getEventId())
+                            .update(
+                                    "registeredEntrantIds", FieldValue.arrayUnion(entrantId),
+                                    "pendingEntrantIds", FieldValue.arrayRemove(entrantId),
+                                    "cancelledEntrantIds", FieldValue.arrayRemove(entrantId),
+                                    "confirmedCount", FieldValue.increment(1)
+                            )
+                            .addOnSuccessListener(unused ->
+                                    notificationRef.update("status", "ACCEPTED")
+                                            .addOnSuccessListener(unused2 -> {
+                                                notification.setStatus("ACCEPTED");
+                                                bindStatusAndButtons(holder, notification);
+
+                                                int adapterPosition = holder.getAdapterPosition();
+                                                if (adapterPosition != RecyclerView.NO_POSITION) {
+                                                    notifyItemChanged(adapterPosition);
+                                                }
+
+                                                Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                holder.btnAccept.setEnabled(true);
+                                                holder.btnDecline.setEnabled(true);
+                                                Toast.makeText(context, "Failed to update notification: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                            })
+                            )
+                            .addOnFailureListener(e -> {
+                                holder.btnAccept.setEnabled(true);
+                                holder.btnDecline.setEnabled(true);
+                                Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
                 .addOnFailureListener(e -> {
                     holder.btnAccept.setEnabled(true);
                     holder.btnDecline.setEnabled(true);
-                    Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Failed to verify invitation: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -243,35 +267,59 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             return;
         }
 
-        db.collection("events").document(notification.getEventId())
-                .update(
-                        "pendingEntrantIds", FieldValue.arrayRemove(entrantId),
-                        "registeredEntrantIds", FieldValue.arrayRemove(entrantId),
-                        "cancelledEntrantIds", FieldValue.arrayUnion(entrantId)
-                )
-                .addOnSuccessListener(unused ->
-                        notificationRef.update("status", "DECLINED")
-                                .addOnSuccessListener(unused2 -> {
-                                    notification.setStatus("DECLINED");
-                                    bindStatusAndButtons(holder, notification);
+        // Check if entrant is still in pending list (not cancelled by organizer)
+        db.collection("events").document(notification.getEventId()).get()
+                .addOnSuccessListener(eventDoc -> {
+                    if (!eventDoc.exists()) {
+                        holder.btnAccept.setEnabled(true);
+                        holder.btnDecline.setEnabled(true);
+                        Toast.makeText(context, "Event not found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-                                    int adapterPosition = holder.getAdapterPosition();
-                                    if (adapterPosition != RecyclerView.NO_POSITION) {
-                                        notifyItemChanged(adapterPosition);
-                                    }
+                    List<String> pendingIds = (List<String>) eventDoc.get("pendingEntrantIds");
+                    if (pendingIds == null || !pendingIds.contains(entrantId)) {
+                        holder.btnAccept.setEnabled(true);
+                        holder.btnDecline.setEnabled(true);
+                        Toast.makeText(context, "This invitation is no longer valid", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-                                    Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
-                                })
-                                .addOnFailureListener(e -> {
-                                    holder.btnAccept.setEnabled(true);
-                                    holder.btnDecline.setEnabled(true);
-                                    Toast.makeText(context, "Failed to update notification: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                })
-                )
+                    db.collection("events").document(notification.getEventId())
+                            .update(
+                                    "pendingEntrantIds", FieldValue.arrayRemove(entrantId),
+                                    "registeredEntrantIds", FieldValue.arrayRemove(entrantId),
+                                    "cancelledEntrantIds", FieldValue.arrayUnion(entrantId)
+                            )
+                            .addOnSuccessListener(unused ->
+                                    notificationRef.update("status", "DECLINED")
+                                            .addOnSuccessListener(unused2 -> {
+                                                notification.setStatus("DECLINED");
+                                                bindStatusAndButtons(holder, notification);
+
+                                                int adapterPosition = holder.getAdapterPosition();
+                                                if (adapterPosition != RecyclerView.NO_POSITION) {
+                                                    notifyItemChanged(adapterPosition);
+                                                }
+
+                                                Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                holder.btnAccept.setEnabled(true);
+                                                holder.btnDecline.setEnabled(true);
+                                                Toast.makeText(context, "Failed to update notification: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                            })
+                            )
+                            .addOnFailureListener(e -> {
+                                holder.btnAccept.setEnabled(true);
+                                holder.btnDecline.setEnabled(true);
+                                Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                            });
+                })
                 .addOnFailureListener(e -> {
                     holder.btnAccept.setEnabled(true);
                     holder.btnDecline.setEnabled(true);
-                    Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Failed to verify invitation: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 

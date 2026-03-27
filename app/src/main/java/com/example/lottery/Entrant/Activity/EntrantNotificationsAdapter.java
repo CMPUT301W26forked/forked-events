@@ -75,43 +75,63 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                 return;
             }
 
-            db.collection("invitations")
-                    .document(invitation.getInvitationId())
-                    .update("status", "ACCEPTED")
-                    .addOnSuccessListener(unused -> {
-                        db.collection("events")
-                                .document(invitation.getEventId())
-                                .update(
-                                        "registeredEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()),
-                                        "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
-                                        "cancelledEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
-                                        "confirmedCount", FieldValue.increment(1)
-                                )
-                                .addOnSuccessListener(v2 -> {
+            // Check if entrant is still in pending list (not cancelled by organizer)
+            db.collection("events")
+                    .document(invitation.getEventId())
+                    .get()
+                    .addOnSuccessListener(eventDoc -> {
+                        if (!eventDoc.exists()) {
+                            Toast.makeText(context, "Event not found", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        List<String> pendingIds = (List<String>) eventDoc.get("pendingEntrantIds");
+                        if (pendingIds == null || !pendingIds.contains(invitation.getEntrantId())) {
+                            Toast.makeText(context, "This invitation is no longer valid", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        db.collection("invitations")
+                                .document(invitation.getInvitationId())
+                                .update("status", "ACCEPTED")
+                                .addOnSuccessListener(unused -> {
                                     db.collection("events")
                                             .document(invitation.getEventId())
-                                            .collection("entrants")
-                                            .document(invitation.getEntrantId())
-                                            .update("status", "CONFIRMED");
+                                            .update(
+                                                    "registeredEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId()),
+                                                    "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                                    "cancelledEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                                    "confirmedCount", FieldValue.increment(1)
+                                            )
+                                            .addOnSuccessListener(v2 -> {
+                                                db.collection("events")
+                                                        .document(invitation.getEventId())
+                                                        .collection("entrants")
+                                                        .document(invitation.getEntrantId())
+                                                        .update("status", "CONFIRMED");
 
-                                    invitation.setStatus("ACCEPTED");
-                                    holder.tvNotificationStatus.setText("ACCEPTED");
-                                    holder.btnAccept.setVisibility(View.GONE);
-                                    holder.btnDecline.setVisibility(View.GONE);
+                                                invitation.setStatus("ACCEPTED");
+                                                holder.tvNotificationStatus.setText("ACCEPTED");
+                                                holder.btnAccept.setVisibility(View.GONE);
+                                                holder.btnDecline.setVisibility(View.GONE);
 
-                                    int adapterPosition = holder.getAdapterPosition();
-                                    if (adapterPosition != RecyclerView.NO_POSITION) {
-                                        notifyItemChanged(adapterPosition);
-                                    }
+                                                int adapterPosition = holder.getAdapterPosition();
+                                                if (adapterPosition != RecyclerView.NO_POSITION) {
+                                                    notifyItemChanged(adapterPosition);
+                                                }
 
-                                    Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(context, "Invitation accepted", Toast.LENGTH_SHORT).show();
+                                            })
+                                            .addOnFailureListener(e ->
+                                                    Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                            );
                                 })
                                 .addOnFailureListener(e ->
-                                        Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                                 );
                     })
                     .addOnFailureListener(e ->
-                            Toast.makeText(context, "Failed to accept: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed to verify invitation: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                     );
         });
 
@@ -121,42 +141,62 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                 return;
             }
 
-            db.collection("invitations")
-                    .document(invitation.getInvitationId())
-                    .update("status", "DECLINED")
-                    .addOnSuccessListener(unused -> {
-                        db.collection("events")
-                                .document(invitation.getEventId())
-                                .update(
-                                        "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
-                                        "registeredEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
-                                        "cancelledEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId())
-                                )
-                                .addOnSuccessListener(v2 -> {
+            // Check if entrant is still in pending list (not cancelled by organizer)
+            db.collection("events")
+                    .document(invitation.getEventId())
+                    .get()
+                    .addOnSuccessListener(eventDoc -> {
+                        if (!eventDoc.exists()) {
+                            Toast.makeText(context, "Event not found", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        List<String> pendingIds = (List<String>) eventDoc.get("pendingEntrantIds");
+                        if (pendingIds == null || !pendingIds.contains(invitation.getEntrantId())) {
+                            Toast.makeText(context, "This invitation is no longer valid", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        db.collection("invitations")
+                                .document(invitation.getInvitationId())
+                                .update("status", "DECLINED")
+                                .addOnSuccessListener(unused -> {
                                     db.collection("events")
                                             .document(invitation.getEventId())
-                                            .collection("entrants")
-                                            .document(invitation.getEntrantId())
-                                            .update("status", "DECLINED");
+                                            .update(
+                                                    "pendingEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                                    "registeredEntrantIds", FieldValue.arrayRemove(invitation.getEntrantId()),
+                                                    "cancelledEntrantIds", FieldValue.arrayUnion(invitation.getEntrantId())
+                                            )
+                                            .addOnSuccessListener(v2 -> {
+                                                db.collection("events")
+                                                        .document(invitation.getEventId())
+                                                        .collection("entrants")
+                                                        .document(invitation.getEntrantId())
+                                                        .update("status", "DECLINED");
 
-                                    invitation.setStatus("DECLINED");
-                                    holder.tvNotificationStatus.setText("DECLINED");
-                                    holder.btnAccept.setVisibility(View.GONE);
-                                    holder.btnDecline.setVisibility(View.GONE);
+                                                invitation.setStatus("DECLINED");
+                                                holder.tvNotificationStatus.setText("DECLINED");
+                                                holder.btnAccept.setVisibility(View.GONE);
+                                                holder.btnDecline.setVisibility(View.GONE);
 
-                                    int adapterPosition = holder.getAdapterPosition();
-                                    if (adapterPosition != RecyclerView.NO_POSITION) {
-                                        notifyItemChanged(adapterPosition);
-                                    }
+                                                int adapterPosition = holder.getAdapterPosition();
+                                                if (adapterPosition != RecyclerView.NO_POSITION) {
+                                                    notifyItemChanged(adapterPosition);
+                                                }
 
-                                    Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
+                                                Toast.makeText(context, "Invitation declined", Toast.LENGTH_SHORT).show();
+                                            })
+                                            .addOnFailureListener(e ->
+                                                    Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                            );
                                 })
                                 .addOnFailureListener(e ->
-                                        Toast.makeText(context, "Failed to update event: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Failed to decline: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                                 );
                     })
                     .addOnFailureListener(e ->
-                            Toast.makeText(context, "Failed to decline: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Failed to verify invitation: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                     );
         });
 
