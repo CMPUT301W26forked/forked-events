@@ -261,6 +261,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                     tvLocation.setText(doc.getString("location"));
                     tvOrganizer.setText(doc.getString("organizer"));
 
+                    String organizerId = doc.getString("organizerId");
+                    if (organizerId != null) {
+                        commentsAdapter.setOrganizerId(organizerId);
+                    }
+
                     Long totalSpots = doc.getLong("totalSpots");
                     Long waitlistCount = doc.getLong("waitlistCount");
                     Long confirmedCount = doc.getLong("confirmedCount");

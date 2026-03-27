@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -18,9 +19,15 @@ import java.util.Locale;
 public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.CommentViewHolder> {
 
     private final List<Comment> commentList;
+    private String organizerId;
 
     public CommentsAdapter(List<Comment> commentList) {
         this.commentList = commentList;
+    }
+
+    public void setOrganizerId(String organizerId) {
+        this.organizerId = organizerId;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -38,6 +45,12 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         holder.tvCommentUser.setText(comment.getUserName());
         holder.tvCommentText.setText(comment.getText());
 
+        if (organizerId != null && organizerId.equals(comment.getUserId())) {
+            holder.tvOrganizerBadge.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvOrganizerBadge.setVisibility(View.GONE);
+        }
+
         if (comment.getTimestamp() != null) {
             String formatted = new SimpleDateFormat("MMM d, yyyy h:mm a", Locale.getDefault())
                     .format(comment.getTimestamp().toDate());
@@ -53,13 +66,14 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
     }
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvCommentUser, tvCommentText, tvCommentTime;
+        TextView tvCommentUser, tvCommentText, tvCommentTime, tvOrganizerBadge;
 
         public CommentViewHolder(@NonNull View itemView) {
             super(itemView);
             tvCommentUser = itemView.findViewById(R.id.tvCommentUser);
             tvCommentText = itemView.findViewById(R.id.tvCommentText);
             tvCommentTime = itemView.findViewById(R.id.tvCommentTime);
+            tvOrganizerBadge = itemView.findViewById(R.id.tvOrganizerBadge);
         }
     }
 }
