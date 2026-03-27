@@ -157,6 +157,18 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 });
     }
 
+    /**
+     * Handles the accept action after verifying the notification and entrant status.
+     * check:
+     * - Entrant has not already responded (accepted/declined)
+     * - Entrant is still in the pending list (not cancelled by organizer)
+     * If all pass, moves entrant from pending to registered list and updates notification status.
+     *
+     * @param snapshot The notification document snapshot
+     * @param notificationRef Reference to the notification document for updates
+     * @param notification The notification object containing event and entrant details
+     * @param holder The view holder for updating UI feedback
+     */
     private void handleAcceptAfterCheck(
             @NonNull DocumentSnapshot snapshot,
             @NonNull DocumentReference notificationRef,
@@ -252,6 +264,18 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 });
     }
 
+    /**
+     * Handles the decline action after verifying the notification and entrant status.
+     * Check:
+     * - Entrant has not already responded (accepted/declined)
+     * - Entrant is still in the pending list (not cancelled by organizer)
+     * If all pass  , moves entrant from pending to cancelled list and updates notification status.
+     *
+     * @param snapshot The notification document snapshot
+     * @param notificationRef Reference to the notification document for updates
+     * @param notification The notification object containing event and entrant details
+     * @param holder The view holder for updating UI feedback
+     */
     private void handleDeclineAfterCheck(
             @NonNull DocumentSnapshot snapshot,
             @NonNull DocumentReference notificationRef,
