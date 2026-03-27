@@ -6,9 +6,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,6 +19,7 @@ import com.example.lottery.R;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.android.material.button.MaterialButton;
 
@@ -62,8 +65,6 @@ public class ViewListsFragment extends Fragment {
         rvEntrants = view.findViewById(R.id.rvEntrants);
 
         rvEntrants.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new EntrantAdapter(entrantList);
-        rvEntrants.setAdapter(adapter);
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> getParentFragmentManager().popBackStack());
 
@@ -80,7 +81,11 @@ public class ViewListsFragment extends Fragment {
 
     private void loadListFromArray(String arrayField, String titleSuffix) {
         tvListTitle.setText(eventName + " " + titleSuffix);
-        
+
+        boolean isPending = "pendingEntrantIds".equals(arrayField);
+        adapter = new EntrantAdapter(entrantList, isPending);
+        rvEntrants.setAdapter(adapter);
+
         db.collection("events").document(eventId).get().addOnSuccessListener(eventDoc -> {
             if (!eventDoc.exists()) return;
 
@@ -114,6 +119,19 @@ public class ViewListsFragment extends Fragment {
         }).addOnFailureListener(e -> Log.e("ViewLists", "Error loading event", e));
     }
 
+    private void cancelEntrant(EntrantInfo entrant, int position) {
+        db.collection("events").document(eventId).update(
+            "pendingEntrantIds",   FieldValue.arrayRemove(entrant.id),
+            "cancelledEntrantIds", FieldValue.arrayUnion(entrant.id)
+        ).addOnSuccessListener(v -> {
+            entrantList.remove(position);
+            adapter.notifyItemRemoved(position);
+            Toast.makeText(getContext(), entrant.name + " cancelled.", Toast.LENGTH_SHORT).show();
+        }).addOnFailureListener(e ->
+            Toast.makeText(getContext(), "Failed to cancel entrant.", Toast.LENGTH_SHORT).show()
+        );
+    }
+
     private static class EntrantInfo {
         String id;
         String name;
@@ -126,11 +144,13 @@ public class ViewListsFragment extends Fragment {
         }
     }
 
-    private static class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHolder> {
+    private class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHolder> {
         private List<EntrantInfo> entrants;
+        private boolean showCancelButton;
 
-        EntrantAdapter(List<EntrantInfo> entrants) {
+        EntrantAdapter(List<EntrantInfo> entrants, boolean showCancelButton) {
             this.entrants = entrants;
+            this.showCancelButton = showCancelButton;
         }
 
         @NonNull
@@ -145,9 +165,21 @@ public class ViewListsFragment extends Fragment {
             EntrantInfo entrant = entrants.get(position);
             holder.tvName.setText(entrant.name);
             holder.tvEmail.setText(entrant.email);
-            holder.btnView.setOnClickListener(v -> {
-                // Potential navigation to profile details
-            });
+
+            if (showCancelButton) {
+                holder.btnView.setVisibility(View.VISIBLE);
+                holder.btnView.setText("Remove");
+                holder.btnView.setOnClickListener(v -> {
+                    new AlertDialog.Builder(v.getContext())
+                        .setTitle("Remove from Pending")
+                        .setMessage("Remove " + entrant.name + " from pending entrants?")
+                        .setPositiveButton("Remove", (dialog, which) -> cancelEntrant(entrant, position))
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                });
+            } else {
+                holder.btnView.setVisibility(View.GONE);
+            }
         }
 
         @Override
@@ -155,7 +187,7 @@ public class ViewListsFragment extends Fragment {
             return entrants.size();
         }
 
-        static class ViewHolder extends RecyclerView.ViewHolder {
+        class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName, tvEmail;
             MaterialButton btnView;
 
