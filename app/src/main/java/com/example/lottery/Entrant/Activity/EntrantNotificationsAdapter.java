@@ -39,6 +39,15 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
         return new NotificationViewHolder(view);
     }
 
+    /**
+     * Binds invitation data to the notification view holder.
+     * Sets up the invitation UI. title, event details, and status.
+     * Configures accept/decline button listeners with validation to check
+     * the entrant is still in the pending list (not cancelled by organizer) before allowing response.
+     *
+     * @param holder The view holder to bind data to
+     * @param position The position of the item in the list
+     */
     @Override
     public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
         EntrantInvitation invitation = invitationList.get(position);
