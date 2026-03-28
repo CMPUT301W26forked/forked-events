@@ -13,6 +13,8 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.lottery.Entrant.Activity.EntrantEventsFragment;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -48,15 +50,25 @@ public class OrganizerFragment extends Fragment {
         adapter = new OrganizerAdapter(organizerEvents, getParentFragmentManager());
         recyclerView.setAdapter(adapter);
 
-        // to event builder
+        // to event builder if accessible
         view.findViewById(R.id.btnCreateEvent).setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new EventBuilderFragment())
-                    .addToBackStack(null)
-                    .commit();
+            checkOrganizerAccess(new Runnable() {
+                @Override
+                public void run() {
+                    getParentFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new EventBuilderFragment())
+                            .addToBackStack(null)
+                            .commit();
+                }
+            });
         });
 
-        loadOrganizerEvents();
+        checkOrganizerAccess(new Runnable() {
+            @Override
+            public void run() {
+                loadOrganizerEvents();
+            }
+        });
 
         return view;
     }
@@ -85,5 +97,43 @@ public class OrganizerFragment extends Fragment {
                         adapter.notifyDataSetChanged();
                     }
                 });
+    }
+
+    private void checkOrganizerAccess(Runnable Allow) {
+        String userId = mAuth.getUid();
+        if (userId == null) {
+            redirectBlocked();
+            return;
+        }
+
+        db.collection("blocked_organizers")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(ds -> {
+                    if (!isAdded()) return;
+                    if (ds.exists()) {
+                        redirectBlocked();
+                    } else if (Allow != null) {
+                        Allow.run();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    redirectBlocked();
+                    }
+                );
+    }
+
+    private void redirectBlocked() {
+        Toast.makeText(requireContext(), "Sorry, you do not have access to event management", Toast.LENGTH_SHORT).show();
+
+        BottomNavigationView bottomNav = requireActivity().findViewById(R.id.bottomNav);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_events);
+        }
+
+        getParentFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, new EntrantEventsFragment())
+                .commit();
     }
 }
