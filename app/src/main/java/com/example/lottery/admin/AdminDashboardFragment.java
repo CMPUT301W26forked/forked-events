@@ -109,6 +109,10 @@ public class AdminDashboardFragment extends Fragment {
     private void setupClickListeners() {
         cvEventModeration.setOnClickListener(v -> {
             // Navigate to Event Moderation
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.adminFragmentContainer, new AdminEventModerationFragment())
+                    .addToBackStack(null)
+                    .commit();
         });
 
         cvNotificationLog.setOnClickListener(v -> {

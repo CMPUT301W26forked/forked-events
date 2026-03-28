@@ -19,6 +19,9 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * fragment for notification service
+ */
 public class NotificationsFragment extends Fragment {
 
     private RecyclerView recyclerView;
