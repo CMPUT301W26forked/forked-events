@@ -3,12 +3,12 @@ package com.example.lottery.Entrant.Repo;
 
 public interface WaitlistRepo {
     /***
-     * Adds user to waitlist
+     * Adds user to waitlist ** modified on 2/28 for location sampling **
      * @param eventId ID of event.
      * @param userId ID of device (used to identify user).
      * @param cb Callback that is invoked on success or failure.
      */
-    void joinWaitlist(String eventId, String userId, WaitlistCallback<Void> cb);
+    void joinWaitlist(String eventId, String userId, String entrantName, Double latitude, Double Longitude, WaitlistCallback<Void> cb);
 
     /***
      * Removes user from waitlist

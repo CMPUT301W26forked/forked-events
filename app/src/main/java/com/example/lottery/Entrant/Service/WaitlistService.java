@@ -18,13 +18,13 @@ public class WaitlistService {
     }
 
     /***
-     * Adds user to waitlist for an event.
+     * Adds user to waitlist for an event. ** modified on 2/28 for location sampling **
      * @param eventId ID of event.
      * @param userId ID of device (used to identify user).
      * @param cb Callback that is invoked on success or failure.
      */
-    public void joinWaitList(String eventId, String userId, WaitlistCallback<Void> cb) {
-        repo.joinWaitlist(eventId, userId, cb);
+    public void joinWaitList(String eventId, String userId, String entrantName, Double latitude, Double longitude, WaitlistCallback<Void> cb) {
+        repo.joinWaitlist(eventId, userId, entrantName, latitude, longitude, cb);
     }
 
     /***

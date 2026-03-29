@@ -82,6 +82,16 @@ public class EventManagementFragment extends Fragment {
                     .commit();
         });
 
+        // btn jump to waitlis map
+        View btnWaitListMap = view.findViewById(R.id.btnWaitListMap);
+        btnWaitListMap.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, WaitlistMapFragment.newInstance(eventId, eventName))
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+
         return view;
     }
 
