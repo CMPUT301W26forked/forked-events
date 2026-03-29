@@ -1,6 +1,9 @@
 package com.example.lottery.Entrant.Activity;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -11,7 +14,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.PackageManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -24,6 +30,9 @@ import com.example.lottery.Entrant.Repo.WaitlistCallback;
 import com.example.lottery.Entrant.Service.EntrantService;
 import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
@@ -62,8 +71,21 @@ public class EntrantEventDetailsFragment extends Fragment {
     private CommentsAdapter commentsAdapter;
     private ListenerRegistration commentsListener;
 
+    private FusedLocationProviderClient fusedLocationProviderClient;
+    private MaterialButton pendingJoinButton;
+    private String pendingEntrantName;
+
     public EntrantEventDetailsFragment() {
     }
+
+    private final ActivityResultLauncher<String> locationPermissionLauncher = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(), res -> {
+                if (res) {
+                    fetchCurrentLocationAndJoin();
+                } else {
+                    fallbackToJoinWithoutLocation();
+                }
+            });
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -92,6 +114,8 @@ public class EntrantEventDetailsFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         entrantService = new EntrantService();
         waitlistService = new WaitlistService();
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         commentList = new ArrayList<>();
         commentsAdapter = new CommentsAdapter(commentList);
@@ -311,6 +335,10 @@ public class EntrantEventDetailsFragment extends Fragment {
                 );
     }
 
+    /**
+     * updated joinWaitlist method for geo collection
+     * @param btnJoin
+     */
     private void joinWaitlist(MaterialButton btnJoin) {
         if (!"Open".equalsIgnoreCase(eventStatus)) {
             Toast.makeText(getContext(), "Registration is closed.", Toast.LENGTH_SHORT).show();
@@ -328,37 +356,215 @@ public class EntrantEventDetailsFragment extends Fragment {
 
             btnJoin.setEnabled(false);
 
-            entrantService.signUpForEvent(entrantId, eventId);
-
-            db.collection("events")
-                    .document(eventId)
-                    .update(
-                            "waitlistedEntrantIds", FieldValue.arrayUnion(entrantId),
-                            "waitlistCount", FieldValue.increment(1)
-                    )
-                    .addOnSuccessListener(unused ->
-                            db.collection("users")
-                                    .document(entrantId)
-                                    .update("registeredEventIds", FieldValue.arrayUnion(eventId))
-                                    .addOnSuccessListener(unused2 -> {
-                                        createWaitlistNotification();
-                                        isOnWaitlist = true;
-                                        setLeaveWaitlistStyle(btnJoin);
-                                        btnJoin.setEnabled(true);
-                                        Toast.makeText(getContext(), "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        isOnWaitlist = true;
-                                        setLeaveWaitlistStyle(btnJoin);
-                                        btnJoin.setEnabled(true);
-                                        Toast.makeText(getContext(), "Joined waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    })
-                    )
-                    .addOnFailureListener(e -> {
-                        btnJoin.setEnabled(true);
-                        Toast.makeText(getContext(), "Failed to join waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+            resolveEntrantName(entrantName -> showLocationChoiceDialog(btnJoin, entrantName));
+        }).addOnFailureListener(e -> {
+            btnJoin.setEnabled(true);
+            Toast.makeText(getContext(), "Failed to join waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         });
+    }
+
+    /**
+     * fetch entrant name
+     * @param cb
+     */
+    private void resolveEntrantName(EntrantNameCallBack cb) {
+        db.collection("users")
+                .document(entrantId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    String entrantName = documentSnapshot.getString("name");
+
+                    if (entrantName == null || entrantName.trim().isEmpty()) {
+                        entrantName = documentSnapshot.getString("username");
+                    }
+
+                    if (entrantName == null || entrantName.trim().isEmpty()) {
+                        entrantName = "Anonymous user";
+                    }
+
+                    cb.onResult(entrantName);
+                })
+                .addOnFailureListener(e -> cb.onResult("Anonymous user"));
+    }
+
+    /**
+     * ask for allowance of geo collection and process next corresponding step
+     * @param btnJoin
+     * @param entrantName
+     */
+    private void showLocationChoiceDialog(MaterialButton btnJoin, String entrantName) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Use current location?")
+                .setMessage("Allow the app to get your current location for the wait list map?")
+                .setPositiveButton("Allow", (dialog, which) -> {
+                    pendingJoinButton = btnJoin;
+                    pendingEntrantName = entrantName;
+                    requestLocationForWaitlistJoin();
+                })
+                .setNegativeButton("Not now", (dialog, which) -> {
+                    finalizeWaitlistJoin(btnJoin, entrantName, null, null);
+                })
+                .setCancelable(false)
+                .show();
+    }
+
+    /**
+     * decide how to request location
+     */
+    private void requestLocationForWaitlistJoin() {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fetchCurrentLocationAndJoin();
+            return;
+        }
+
+        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
+
+    }
+
+    /**
+     * fetch current location and join
+     */
+    @SuppressLint("MissingPermission")
+    private void fetchCurrentLocationAndJoin() {
+        fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener(location -> {
+                if (location != null) {
+                    completePendingJoinWithLocation(location.getLatitude(), location.getLongitude()
+                    );
+                } else {
+                    tryLastKnownLocation();
+                }
+            })
+            .addOnFailureListener(e -> tryLastKnownLocation());
+    }
+
+    /**
+     * try last location
+     */
+    @SuppressLint("MissingPermission")
+    private void tryLastKnownLocation() {
+        fusedLocationProviderClient.getLastLocation()
+            .addOnSuccessListener(location -> {
+                if (location != null) {
+                    completePendingJoinWithLocation(location.getLatitude(), location.getLongitude()
+                    );
+                } else {
+                    fallbackToJoinWithoutLocation("Could not fetch your location");
+                }
+            })
+            .addOnFailureListener(e -> fallbackToJoinWithoutLocation("Could not fetch your location")
+            );
+    }
+
+    /**
+     * proceed to final join
+     * @param latitude
+     * @param longitude
+     */
+    private void completePendingJoinWithLocation(Double latitude, Double longitude) {
+        MaterialButton joinButton = pendingJoinButton;
+        String entrantName = pendingEntrantName;
+        clearPendingJoinState();
+
+        if (joinButton == null || entrantName == null) return;
+
+        finalizeWaitlistJoin(joinButton, entrantName, latitude, longitude);
+    }
+
+    /**
+     * overload
+     */
+    private void fallbackToJoinWithoutLocation() {
+        fallbackToJoinWithoutLocation(null);
+    }
+
+
+    /**
+     * join without geo sampling
+     */
+    private void fallbackToJoinWithoutLocation(String message) {
+        MaterialButton joinButton = pendingJoinButton;
+        String entrantName = pendingEntrantName;
+        clearPendingJoinState();
+
+        if (joinButton != null && entrantName != null) {
+            finalizeWaitlistJoin(joinButton, entrantName, null, null);
+
+            if (message != null && isAdded()) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    /**
+     * reset
+     */
+    private void clearPendingJoinState() {
+        pendingEntrantName = null;
+        pendingJoinButton = null;
+    }
+
+    /**
+     * old join method
+     * @param btnJoin
+     * @param entrantName
+     * @param latitude
+     * @param longitude
+     */
+    private void finalizeWaitlistJoin(MaterialButton btnJoin, String entrantName, Double latitude, Double longitude) {
+        entrantService.signUpForEvent(entrantName, eventId);
+
+        db.collection("events")
+                .document(eventId)
+                .update(
+                        "waitlistedEntrantIds", FieldValue.arrayUnion(entrantId),
+                        "waitlistCount", FieldValue.increment(1)
+                )
+                .addOnSuccessListener(unused ->
+                        db.collection("users")
+                                .document(entrantId)
+                                .update("registeredEventIds", FieldValue.arrayUnion(eventId))
+                                .addOnSuccessListener(unused2 -> {
+                                    writeWaitlistEntry(btnJoin, entrantName, latitude, longitude, null);
+                                })
+                                .addOnFailureListener(e -> {
+                                    writeWaitlistEntry(btnJoin, entrantName, latitude, longitude, "Joined but failed to update profile" + e.getMessage());
+                                })
+                )
+                .addOnFailureListener(e -> {
+                    btnJoin.setEnabled(true);
+                    Toast.makeText(getContext(), "Failed to join waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /**
+     * old join method
+     * @param btnJoin
+     * @param entrantName
+     * @param latitude
+     * @param longitude
+     * @param partialWarning
+     */
+    private void writeWaitlistEntry(MaterialButton btnJoin, String entrantName, Double latitude, Double longitude, String partialWarning) {
+        waitlistService.joinWaitList(eventId, entrantId, entrantName, latitude, longitude,
+                new WaitlistCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        createWaitlistNotification();
+                        isOnWaitlist = true;
+                        setLeaveWaitlistStyle(btnJoin);
+                        btnJoin.setEnabled(true);
+                        Toast.makeText(getContext(), partialWarning != null ? partialWarning : "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        isOnWaitlist = true;
+                        setLeaveWaitlistStyle(btnJoin);
+                        btnJoin.setEnabled(true);
+                        Toast.makeText(getContext(), "Joined waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void createWaitlistNotification() {
@@ -390,16 +596,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                                 .document(entrantId)
                                 .update("registeredEventIds", FieldValue.arrayRemove(eventId))
                                 .addOnSuccessListener(unused2 -> {
-                                    isOnWaitlist = false;
-                                    setJoinWaitlistStyle(btnJoin);
-                                    btnJoin.setEnabled(true);
+                                    removeWaitlistEntry(btnJoin,"Left waitlist successfully");
                                     Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
                                 })
                                 .addOnFailureListener(e -> {
-                                    isOnWaitlist = false;
-                                    setJoinWaitlistStyle(btnJoin);
-                                    btnJoin.setEnabled(true);
-                                    Toast.makeText(getContext(), "Left waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                    removeWaitlistEntry(btnJoin, "Left waitlist, but failed to update profile: "+e.getMessage());
                                 })
                 )
                 .addOnFailureListener(e -> {
@@ -407,6 +608,26 @@ public class EntrantEventDetailsFragment extends Fragment {
                     Toast.makeText(getContext(), "Failed to leave waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
 
+    }
+
+    private void removeWaitlistEntry(MaterialButton btnJoin, String baseMessage) {
+        waitlistService.leaveWaitList(eventId, entrantId, new WaitlistCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                isOnWaitlist = false;
+                setJoinWaitlistStyle(btnJoin);
+                btnJoin.setEnabled(true);
+                Toast.makeText(getContext(), baseMessage, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(Exception e) {
+                isOnWaitlist = false;
+                setJoinWaitlistStyle(btnJoin);
+                btnJoin.setEnabled(true);
+                Toast.makeText(getContext(), baseMessage + "waitlist map data cleanup failed", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setJoinWaitlistStyle(MaterialButton btn) {
@@ -445,4 +666,10 @@ public class EntrantEventDetailsFragment extends Fragment {
             commentsListener.remove();
         }
     }
+
+    private interface EntrantNameCallBack {
+        void onResult(String entrantName);
+    }
+
+
 }

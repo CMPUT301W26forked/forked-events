@@ -2,8 +2,10 @@ package com.example.lottery;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,15 +26,28 @@ import com.example.lottery.organizer.EventService;
 import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.PosterStorageService;
 import com.example.lottery.organizer.RepoCallback;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.Status;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.PlaceAutocomplete;
+import com.google.android.libraries.places.widget.PlaceAutocompleteActivity;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.example.lottery.BuildConfig;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.text.SimpleDateFormat;
@@ -49,10 +64,19 @@ public class EventBuilderFragment extends Fragment {
     private TextView tvRegPeriod;
     private EditText etEventName, etLocation, etCapacity, etWaitingListLimit, etDescription, etOrganizer;
     private CheckBox cbGeoLocation, cbIsPrivate;
-
     private Timestamp startTimestamp;
     private Timestamp endTimestamp;
     private String posterUrl;
+    private static final String defaultEventLocation = "Edmonton, Alberta, Canada";
+    private static final double defaultEventLat = 53.55;
+    private static final double defaultEventLon = -113.49;
+
+    private PlacesClient placesClient;
+    private String selectedPlaceId;
+    private Double selectedEventLat;
+    private Double selectedEventLon;
+    private String selectedFormattedAddress;
+
 
     private final ActivityResultLauncher<String> pickImg =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -60,6 +84,26 @@ public class EventBuilderFragment extends Fragment {
                     uploadPoster(uri);
                 }
             });
+
+    private final ActivityResultLauncher<Intent> placeAutocompleteLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        Intent intent = result.getData();
+                        if (result.getResultCode() == PlaceAutocompleteActivity.RESULT_OK && intent != null) {
+                            AutocompletePrediction predication = PlaceAutocomplete.getPredictionFromIntent(intent);
+                            AutocompleteSessionToken sessionToken = PlaceAutocomplete.getSessionTokenFromIntent(intent);
+
+                            fetchSelectedPlaceDetails(predication.getPlaceId(), sessionToken);
+                            return;
+                        }
+
+                        if (result.getResultCode() == PlaceAutocompleteActivity.RESULT_ERROR && intent != null) {
+                            Status status = PlaceAutocomplete.getResultStatusFromIntent(intent);
+                            Toast.makeText(requireContext(), "Place search failed: " + (status != null? status.getStatusMessage(): "Unknown error"), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+            );
 
     @Nullable
     @Override
@@ -92,6 +136,9 @@ public class EventBuilderFragment extends Fragment {
 
         repo = new FSEventRepo();
         service = new EventService(repo, new PosterStorageService());
+
+        initPlacesClient();
+        configureLocationPicker();
 
         loadAndRender();
 
@@ -150,12 +197,39 @@ public class EventBuilderFragment extends Fragment {
             return;
         }
 
+        String visibleLocation = etLocation.getText().toString().trim();
+        String finalLocation;
+        String finalPlaceId;
+        double finalLat;
+        double finalLon;
+
+        if (visibleLocation.isEmpty()) {
+            finalLocation = defaultEventLocation;
+            finalPlaceId = null;
+            finalLat = defaultEventLat;
+            finalLon = defaultEventLon;
+        } else {
+            if (selectedEventLat == null || selectedEventLon == null || selectedFormattedAddress == null) {
+                etLocation.setError("Illegal input, choose a location");
+                Toast.makeText(requireContext(), "Select a suggested location", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            finalLocation = selectedFormattedAddress;
+            finalPlaceId = selectedPlaceId;
+            finalLat = selectedEventLat;
+            finalLon = selectedEventLon;
+        }
+
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("name", etEventName.getText().toString());
         eventData.put("organizer", etOrganizer.getText().toString());
         eventData.put("organizerId", currentUserId);
         eventData.put("description", etDescription.getText().toString());
-        eventData.put("location", etLocation.getText().toString());
+        eventData.put("location", finalLocation);
+        eventData.put("placeId", finalPlaceId);
+        eventData.put("eventLatitude", finalLat);
+        eventData.put("eventLongitude", finalLon);
         eventData.put("registrationStart", startTimestamp);
         eventData.put("registrationEnd", endTimestamp);
         eventData.put("posterUri", posterUrl);
@@ -225,6 +299,12 @@ public class EventBuilderFragment extends Fragment {
 
                 Boolean isPrivate = result.getBoolean("isPrivate");
                 if (isPrivate != null) cbIsPrivate.setChecked(isPrivate);
+
+                selectedPlaceId = result.getString("placeId");
+                selectedFormattedAddress = result.getString("location");
+                selectedEventLat = result.getDouble("eventLatitude");
+                selectedEventLon = result.getDouble("eventLongitude");
+
             }
             @Override
             public void onError(Exception e) {
@@ -234,9 +314,101 @@ public class EventBuilderFragment extends Fragment {
         });
     }
 
+    /**
+     * formate period to yyyy-MM-dd, HH:mm not displayed considering content width
+     * @param start
+     * @param end
+     * @return
+     */
     private String formatPeriod(Timestamp start, Timestamp end) {
         if (start == null || end == null) return "Unset";
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         return sdf.format(start.toDate()) + " - " + sdf.format(end.toDate());
+    }
+
+    /**
+     * init google places service
+     */
+    private void initPlacesClient() {
+        String apikey = BuildConfig.PLACES_API_KEY;
+
+        if (TextUtils.isEmpty(apikey)) {
+            Toast.makeText(requireContext(), "Places API key is not configured", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!Places.isInitialized()) {
+            Places.initializeWithNewPlacesApiEnabled(requireContext().getApplicationContext(), apikey);
+        }
+
+        placesClient = Places.createClient(requireContext());
+    }
+
+    /**
+     * configure etLocation for correct interaction
+     */
+    private void configureLocationPicker() {
+        etLocation.setFocusable(false);
+        etLocation.setFocusableInTouchMode(false);
+        etLocation.setClickable(true);
+        etLocation.setLongClickable(false);
+
+        etLocation.setOnClickListener(v -> launchPlaceAutocomplete());
+    }
+
+    /**
+     * launch placeAutocomplete
+     */
+    private void launchPlaceAutocomplete() {
+        if (placesClient == null) {
+            Toast.makeText(requireContext(), "Places is not ready", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AutocompleteSessionToken sessionToken = AutocompleteSessionToken.newInstance();
+
+        Intent intent = new PlaceAutocomplete.IntentBuilder()
+                .setAutocompleteSessionToken(sessionToken)
+                .setCountries(Arrays.asList("CA","US"))
+                .setInitialQuery(etLocation.getText().toString().trim())
+                .build(requireContext());
+        placeAutocompleteLauncher.launch(intent);
+    }
+
+    /**
+     * fetch details for selected
+     * @param placeId
+     * @param sessionToken
+     */
+    private void fetchSelectedPlaceDetails(String placeId, AutocompleteSessionToken sessionToken) {
+        List<Place.Field> fields = Arrays.asList(
+                Place.Field.ID,
+                Place.Field.FORMATTED_ADDRESS,
+                Place.Field.LOCATION
+        );
+        FetchPlaceRequest request = FetchPlaceRequest.builder(placeId, fields)
+                .setSessionToken(sessionToken)
+                .build();
+
+        placesClient.fetchPlace(request)
+                .addOnSuccessListener(response -> {
+                    Place place = response.getPlace();
+
+                    if (place.getLocation() == null || place.getFormattedAddress() == null) {
+                        Toast.makeText(requireContext(), "Selected place is missing location info", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    selectedPlaceId = place.getId();
+                    selectedFormattedAddress = place.getFormattedAddress();
+                    selectedEventLat = place.getLocation().latitude;
+                    selectedEventLon = place.getLocation().longitude;
+
+                    etLocation.setText(selectedFormattedAddress);
+                    etLocation.setError(null);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to load place details", Toast.LENGTH_SHORT).show();
+                });
     }
 }

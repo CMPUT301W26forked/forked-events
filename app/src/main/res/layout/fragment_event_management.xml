@@ -166,6 +166,10 @@
                 app:cardElevation="2dp">
 
                 <TextView
+                    android:id="@+id/btnWaitListMap"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -174,6 +178,7 @@
                     android:textColor="@color/black"
                     android:textSize="34sp"
                     android:textStyle="bold" />
+
             </androidx.cardview.widget.CardView>
 
         </GridLayout>

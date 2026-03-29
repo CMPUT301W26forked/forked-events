@@ -2,11 +2,13 @@ package com.example.lottery.Entrant.Repo;
 
 
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.AggregateSource;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /***
  * Handles direct Firebase operations for waitlist data.
@@ -21,15 +23,27 @@ public class FSWaitlistRepo implements WaitlistRepo {
     }
 
     /***
-     * Adds user to waiting list (by creating a document)
+     * Adds user to waiting list (by creating a document) ** modified on 2/28 for location sampling **
      * @param eventId ID of event.
      * @param userId ID of device (used to identify user)
      * @param cb Callback that is invoked on success or failure.
      */
     @Override
-    public void joinWaitlist(String eventId, String userId, WaitlistCallback<Void> cb) {
-        ref(eventId, userId).set(new HashMap<>()).addOnSuccessListener(v -> cb
-                        .onSuccess(null))
+    public void joinWaitlist(String eventId, String userId, String entrantName, Double latitude, Double longitude, WaitlistCallback<Void> cb) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("entrantId", userId);
+        data.put("entrantName", entrantName);
+        data.put("joinedAt", Timestamp.now());
+
+        if (latitude != null) {
+            data.put("latitude", latitude);
+        }
+        if (longitude != null) {
+            data.put("longitude", longitude);
+        }
+
+        ref(eventId, userId).set(data)
+                .addOnSuccessListener(v -> cb.onSuccess(null))
                 .addOnFailureListener(cb::onError);
     }
 
