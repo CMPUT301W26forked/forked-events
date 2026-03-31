@@ -21,6 +21,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Fragment representing the admin dashboard.
+ * Displays moderation stats and provides navigation to admin features.
+ */
 public class AdminDashboardFragment extends Fragment {
 
     private TextView tvAdminId;
@@ -31,6 +35,9 @@ public class AdminDashboardFragment extends Fragment {
     private TextView tvNotificationLogTitle;
     private TextView tvNotificationLogCount;
 
+    /**
+     * Initializes the UI, Firebase instance, and loads dashboard data.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -64,7 +71,7 @@ public class AdminDashboardFragment extends Fragment {
     }
 
     /**
-     * Loads the counts for different moderation categories from Firestore
+     * Loads and displays counts for image, event, and profile moderation from Firestore.
      */
     private void loadModerationCounts() {
         // Image Moderation Count
@@ -91,7 +98,7 @@ public class AdminDashboardFragment extends Fragment {
                     }
                 });
 
-        // Profile Moderation Count
+        // Profile Moderation Count (excluding admins and organizers)
         db.collection("users")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
@@ -100,7 +107,6 @@ public class AdminDashboardFragment extends Fragment {
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         String role = doc.getString("role");
 
-                        // organizers are handled separately by organizer removal
                         if ("admin".equalsIgnoreCase(role) || "organizer".equalsIgnoreCase(role)) {
                             continue;
                         }
@@ -119,6 +125,10 @@ public class AdminDashboardFragment extends Fragment {
                 });
     }
 
+    /**
+     * Sets click listeners for dashboard cards and logout button.
+     * Handles navigation between admin fragments and logout action.
+     */
     private void setupClickListeners() {
         cvEventModeration.setOnClickListener(v -> {
             getParentFragmentManager().beginTransaction()
@@ -159,6 +169,10 @@ public class AdminDashboardFragment extends Fragment {
         });
     }
 
+    /**
+     * Loads and groups notification logs from Firestore
+     * to display the number of unique organizer-sent notifications.
+     */
     private void loadNotificationLogCount() {
         FirebaseFirestore.getInstance()
                 .collectionGroup("notification")
@@ -194,6 +208,9 @@ public class AdminDashboardFragment extends Fragment {
                 .addOnFailureListener(e -> tvNotificationLogCount.setText("-"));
     }
 
+    /**
+     * Checks whether a notification type was sent by an organizer.
+     */
     private boolean isOrganizerSentType(String type) {
         return "MESSAGE".equalsIgnoreCase(type)
                 || "SELECTED".equalsIgnoreCase(type)

@@ -13,9 +13,17 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/**
+ * Instrumented tests for QrEventDetailsFragment.
+ * Verifies UI correctly displays event data and handles user interactions.
+ */
 @RunWith(AndroidJUnit4.class)
 public class QrEventDetailsFragmentTest {
 
+    /**
+     * Tests that all event details passed via Bundle arguments
+     * are correctly displayed in the corresponding UI TextViews.
+     */
     @Test
     public void qrEventDetails_displaysPassedEventData() {
         Bundle args = new Bundle();
@@ -55,6 +63,10 @@ public class QrEventDetailsFragmentTest {
         });
     }
 
+    /**
+     * Verifies that the "Show QR" button is hidden when the fragment is launched
+     * in the QR scan context.
+     */
     @Test
     public void qrEventDetails_hidesShowQrButton() {
         Bundle args = new Bundle();
@@ -74,6 +86,10 @@ public class QrEventDetailsFragmentTest {
         });
     }
 
+    /**
+     * Tests that clicking the "Join Waitlist" button updates its text to "Joined"
+     * and disables further interaction.
+     */
     @Test
     public void qrEventDetails_joinButtonChangesAfterClick() {
         Bundle args = new Bundle();

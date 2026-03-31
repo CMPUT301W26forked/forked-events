@@ -1,55 +1,26 @@
 package com.example.lottery;
 
-import static androidx.test.espresso.matcher.ViewMatchers.withId;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-
 import com.example.lottery.Entrant.Model.EntrantProfile;
+import com.example.lottery.admin.AdminRemoveProfileFragment;
 
+import androidx.fragment.app.testing.FragmentScenario;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
+/**
+ * Unit tests for EntrantProfile model class.
+ * Verifies constructors, getters, setters, and edge cases for profile data handling.
+ */
 @RunWith(AndroidJUnit4.class)
 public class EntrantProfileTest {
 
-    //@Test
-    //public void qrEventDetails_displaysPassedBundleData() {
-        //Bundle bundle = new Bundle();
-        //bundle.putString("title", "Swimming Lessons - Kids");
-        //bundle.putString("status", "Open");
-        //bundle.putString("description", "Fun swimming lessons");
-        //bundle.putString("location", "West Side Pool");
-        //bundle.putString("date", "3/14/2026 - 5/14/2026");
-        //bundle.putString("spots", "20 spots available");
-        //bundle.putString("lotteryInfo", "Waitlist Open");
-        //bundle.putString("joinedInfo", "47 Joined");
-
-        //FragmentScenario<QrEventDetailsFragment> scenario =
-                //FragmentScenario.launchInContainer(QrEventDetailsFragment.class);
-
-        //onView(withId(R.id.tvTitle)).check(matches(withText("Swimming Lessons - Kids")));
-        //onView(withId(R.id.tvStatusTag)).check(matches(withText("Open")));
-       //onView(withId(R.id.tvDescription)).check(matches(withText("Fun swimming lessons")));
-        //onView(withId(R.id.tvLocation)).check(matches(withText("West Side Pool")));
-        //onView(withId(R.id.tvEventDates)).check(matches(withText("3/14/2026 - 5/14/2026")));
-        //onView(withId(R.id.tvTotalSpots)).check(matches(withText("20 spots available")));
-        //onView(withId(R.id.lotterySection)).check(matches(withText("Waitlist Open")));
-        //onView(withId(R.id.btnJoin)).check(matches(withText("47 Joined")));
-    //}
-
-    //@Test
-    //public void qrScanner_initialViews_displayCorrectly() {
-        //FragmentScenario.launchInContainer(QrScannerFragment.class);
-
-        //onView(withId(R.id.tvScanTitle)).check(matches(withText("Scan Event QR")));
-        //onView(withId(R.id.btnStartScanning)).check(matches(isDisplayed()));
-        //onView(withId(R.id.barcodeScanner))
-                //.check(matches(withEffectiveVisibility(GONE)));
-    //}
-
+    /**
+     * Tests that the parameterized constructor correctly initializes fields
+     * and that all getter methods return the expected values.
+     */
     @Test
     public void entrantProfile_constructorAndGetters_workCorrectly() {
         ArrayList<String> eventIds = new ArrayList<>();
@@ -71,6 +42,10 @@ public class EntrantProfileTest {
         org.junit.Assert.assertEquals(2, profile.getRegisteredEventIds().size());
     }
 
+    /**
+     * Tests that setter methods correctly update profile fields
+     * and values can be retrieved accurately using getters.
+     */
     @Test
     public void entrantProfile_setters_workCorrectly() {
         EntrantProfile profile = new EntrantProfile();
@@ -91,6 +66,10 @@ public class EntrantProfileTest {
         org.junit.Assert.assertEquals("event123", profile.getRegisteredEventIds().get(0));
     }
 
+    /**
+     * Verifies that the empty constructor initializes all fields to null
+     * ensuring default state is correctly handled.
+     */
     @Test
     public void entrantProfile_emptyConstructor_hasDefaultValues() {
         EntrantProfile profile = new EntrantProfile();
@@ -102,6 +81,10 @@ public class EntrantProfileTest {
         org.junit.Assert.assertNull(profile.getRegisteredEventIds());
     }
 
+    /**
+     * Ensures that an empty event list is stored properly
+     * and does not cause null pointer issues.
+     */
     @Test
     public void entrantProfile_emptyEventList_storesCorrectly() {
         ArrayList<String> eventIds = new ArrayList<>();
@@ -118,6 +101,10 @@ public class EntrantProfileTest {
         org.junit.Assert.assertEquals(0, profile.getRegisteredEventIds().size());
     }
 
+    /**
+     * Tests that a null event list is handled correctly
+     * and remains null when passed to the constructor.
+     */
     @Test
     public void entrantProfile_nullEventList_worksCorrectly() {
         EntrantProfile profile = new EntrantProfile(
@@ -131,6 +118,10 @@ public class EntrantProfileTest {
         org.junit.Assert.assertNull(profile.getRegisteredEventIds());
     }
 
+    /**
+     * Verifies that updating the event list replaces old values
+     * rather than appending or merging with previous data.
+     */
     @Test
     public void entrantProfile_updateRegisteredEvents_replacesOldValues() {
         EntrantProfile profile = new EntrantProfile();
@@ -149,6 +140,10 @@ public class EntrantProfileTest {
         org.junit.Assert.assertEquals("event2", profile.getRegisteredEventIds().get(0));
     }
 
+    /**
+     * Tests that long string values are stored and retrieved correctly
+     * without truncation or errors.
+     */
     @Test
     public void entrantProfile_longStrings_storeCorrectly() {
         String longName = "VeryLongNameForTestingProfileStorage";

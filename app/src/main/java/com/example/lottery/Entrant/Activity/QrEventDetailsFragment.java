@@ -18,6 +18,10 @@ import com.google.android.material.button.MaterialButton;
 
 public class QrEventDetailsFragment extends Fragment {
 
+    /**
+     * Inflates event details layout and populates UI using data passed via arguments.
+     * Handles QR-specific UI behavior such as hiding QR button and enabling waitlist join.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -45,6 +49,7 @@ public class QrEventDetailsFragment extends Fragment {
 
         Bundle args = getArguments();
 
+        // Populate UI fields if arguments are provided
         if (args != null) {
             String eventId = args.getString("eventId", "");
             String title = args.getString("title", "");
@@ -64,37 +69,31 @@ public class QrEventDetailsFragment extends Fragment {
             tvLocation.setText(location);
             tvOrganizer.setText("Scanned Event");
 
-            // "20 spots available" -> show only 20 if possible
+            // Extract numeric values from text fields for display
             tvTotalSpots.setText(extractLeadingNumber(spots));
-
-            // "47 Joined" -> show 47
             tvWaitlist.setText(extractLeadingNumber(joinedInfo));
 
-            // Since scanned event does not currently provide confirmed count,
-            // keep it 0 for now
+            // Default confirmed count for scanned event
             tvConfirmed.setText("0");
 
-            // QR flow should not show "show QR" again here
+            // Hide QR button since user already came via QR
             btnShowQr.setVisibility(View.GONE);
 
-            // Poster is optional; keep placeholder if none
+            // Set default placeholder image
             ivEventPoster.setImageResource(R.drawable.ic_launcher_background);
 
-            // Update join button text for scanned flow
+            // Configure join button behavior
             btnJoin.setText("Join Waitlist");
-
             btnJoin.setOnClickListener(v -> {
-                // For now this is just UI feedback/navigation placeholder.
-                // If you want, next I can connect this directly to Firestore sign-up.
                 btnJoin.setText("Joined");
                 btnJoin.setEnabled(false);
             });
 
-            // lotteryInfo is not directly shown in this shared layout except inside lottery section.
-            // We keep lottery section visible because this screen is about joining via QR.
+            // Ensure lottery section is visible for QR-based joining
             lotterySection.setVisibility(View.VISIBLE);
         }
 
+        // Handle back navigation
         btnBack.setOnClickListener(v ->
                 requireActivity().getSupportFragmentManager().popBackStack()
         );
@@ -102,6 +101,10 @@ public class QrEventDetailsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Extracts the first numeric value from a string.
+     * Returns "0" if no digits are found or input is empty.
+     */
     private String extractLeadingNumber(String text) {
         if (text == null || text.trim().isEmpty()) {
             return "0";

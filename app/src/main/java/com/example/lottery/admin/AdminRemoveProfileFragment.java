@@ -38,6 +38,10 @@ public class AdminRemoveProfileFragment extends Fragment {
 
     private FirebaseFirestore db;
 
+    /**
+     * Creates a new instance of this fragment with user data passed as arguments.
+     * This is used when navigating to the remove profile screen from admin panel.
+     */
     public static AdminRemoveProfileFragment newInstance(String userId, String name, String email,
                                                          String phone, String role, String profilePictureUri) {
         AdminRemoveProfileFragment fragment = new AdminRemoveProfileFragment();
@@ -52,6 +56,10 @@ public class AdminRemoveProfileFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Initializes the UI, retrieves passed user data, and sets up button listeners.
+     * Also loads profile image and displays user information.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -102,6 +110,10 @@ public class AdminRemoveProfileFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Displays a confirmation dialog before deleting the user profile.
+     * Ensures admin explicitly confirms destructive action.
+     */
     private void showConfirmDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Remove profile")
@@ -111,6 +123,10 @@ public class AdminRemoveProfileFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Deletes the user profile and cleans up all related data (notifications, event references).
+     * Uses Firestore batch operations to ensure all deletions/updates happen together.
+     */
     private void removeProfile() {
         if (TextUtils.isEmpty(userId)) {
             Toast.makeText(getContext(), "User ID missing", Toast.LENGTH_SHORT).show();

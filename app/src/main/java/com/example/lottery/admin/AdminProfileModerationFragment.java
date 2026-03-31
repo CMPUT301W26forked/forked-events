@@ -21,6 +21,10 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment for admin profile moderation.
+ * Displays a list of user profiles and allows navigation to profile removal.
+ */
 public class AdminProfileModerationFragment extends Fragment {
 
     private RecyclerView recyclerView;
@@ -29,6 +33,10 @@ public class AdminProfileModerationFragment extends Fragment {
     private final List<AdminProfileItem> profileList = new ArrayList<>();
     private FirebaseFirestore db;
 
+    /**
+     * Initializes UI components, sets up RecyclerView and adapter,
+     * and triggers loading of user profiles from Firestore.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -66,6 +74,10 @@ public class AdminProfileModerationFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Fetches user profiles from Firestore, filters out admins/organizers,
+     * and updates the RecyclerView with the resulting list.
+     */
     private void loadProfiles() {
         db.collection("users")
                 .get()

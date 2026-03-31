@@ -59,7 +59,10 @@ public class ProfileFragment extends Fragment {
     private String currentEmail = "";
     private String currentPhone = "";
 
-
+    /**
+     * Inflates the profile screen layout and initializes all UI elements.
+     * Also sets up Firebase, button listeners, and loads the user's profile and registered events.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -116,6 +119,10 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Reloads the profile and event list whenever the fragment becomes visible again.
+     * This keeps the displayed data updated after returning from other screens.
+     */
     @Override
     public void onResume() {
         super.onResume();
@@ -123,6 +130,10 @@ public class ProfileFragment extends Fragment {
         loadMyEvents();
     }
 
+    /**
+     * Shows a logout confirmation dialog and signs the user out if confirmed.
+     * After logout, the user is redirected to the login screen.
+     */
     private void logoutUser() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Log Out")
@@ -140,6 +151,10 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Displays a confirmation dialog before permanently deleting the user's profile.
+     * This helps prevent accidental profile deletion.
+     */
     private void showDeleteProfileDialog() {
         new AlertDialog.Builder(getContext())
                 .setTitle("Delete Profile")
@@ -149,6 +164,10 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Starts the profile deletion process by first retrieving the user's registered events.
+     * The user must be removed from all event references before profile data is deleted.
+     */
     private void deleteUserProfile() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
 
@@ -173,6 +192,10 @@ public class ProfileFragment extends Fragment {
                 );
     }
 
+    /**
+     * Removes the user from confirmed and waitlisted event lists for all registered events.
+     * Once all event cleanup tasks finish, it continues with notification and profile deletion.
+     */
     private void removeUserFromEventsAndDeleteData(FirebaseUser currentUser, List<String> registeredEventIds) {
         List<Task<?>> eventTasks = new ArrayList<>();
 
@@ -224,6 +247,10 @@ public class ProfileFragment extends Fragment {
                 );
     }
 
+    /**
+     * Deletes all notification documents under the user's notification subcollection.
+     * After notifications are removed, it proceeds to delete the main profile and auth account.
+     */
     private void deleteNotificationsThenProfile(FirebaseUser currentUser) {
         db.collection("users")
                 .document(userId)
@@ -247,6 +274,10 @@ public class ProfileFragment extends Fragment {
                 );
     }
 
+    /**
+     * Deletes the user's Firestore document and then deletes their Firebase Authentication account.
+     * If successful, the app returns the user to the login screen.
+     */
     private void deleteUserDocumentAndAuth(FirebaseUser currentUser) {
         db.collection("users")
                 .document(userId)
@@ -281,6 +312,10 @@ public class ProfileFragment extends Fragment {
                 );
     }
 
+    /**
+     * Loads the user's profile data from Firestore and updates the UI fields.
+     * If no profile exists yet, a default user document is created.
+     */
     private void loadUserProfile() {
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if (currentUser == null) return;
@@ -348,12 +383,20 @@ public class ProfileFragment extends Fragment {
                 );
     }
 
+    /**
+     * Updates the displayed name, email, and phone number on the profile screen.
+     * It also shows a default message when the phone number is missing.
+     */
     private void updateProfileUI() {
         tvProfileName.setText(currentName);
         tvProfileEmail.setText(currentEmail);
         tvProfilePhone.setText(TextUtils.isEmpty(currentPhone) ? "Phone: Not added" : "Phone: " + currentPhone);
     }
 
+    /**
+     * Opens a dialog where the user can edit their profile information.
+     * Guest users can edit email, while regular users only view their auth email.
+     */
     private void showEditProfileDialog() {
         View dialogView = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_profile, null);
 
@@ -403,6 +446,10 @@ public class ProfileFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Saves updated profile details to Firestore and refreshes the local UI values.
+     * Guest email is updated only when applicable.
+     */
     private void saveProfile(String name, String email, String phone) {
         Map<String, Object> updates = new HashMap<>();
         updates.put("name", name);
@@ -436,6 +483,10 @@ public class ProfileFragment extends Fragment {
                 );
     }
 
+    /**
+     * Checks whether an event with the given ID is already in the user's local event list.
+     * This prevents duplicate events from being added to the RecyclerView data.
+     */
     private boolean containsEvent(String eventId) {
         for (Event event : myEvents) {
             if (event.getEventId() != null && event.getEventId().equals(eventId)) {
@@ -445,6 +496,10 @@ public class ProfileFragment extends Fragment {
         return false;
     }
 
+    /**
+     * Loads all events registered by the user from Firestore and displays them in the RecyclerView.
+     * Each event is fetched individually and only valid matching events are added.
+     */
     private void loadMyEvents() {
         db.collection("users")
                 .document(userId)
@@ -497,6 +552,10 @@ public class ProfileFragment extends Fragment {
                 );
     }
 
+    /**
+     * Converts a Firestore event document into an Event object for display in the profile screen.
+     * Only events where the user is confirmed or waitlisted are returned.
+     */
     private Event mapFirestoreDocToEvent(DocumentSnapshot doc) {
         String eventId = doc.getId();
         String title = safeString(doc.getString("name"));
@@ -528,6 +587,10 @@ public class ProfileFragment extends Fragment {
         return event;
     }
 
+    /**
+     * Opens the selected event's details screen by creating and displaying a new fragment.
+     * The selected event ID is passed through a bundle.
+     */
     private void openEventDetails(Event event) {
         EntrantEventDetailsFragment detailsFragment = new EntrantEventDetailsFragment();
         Bundle bundle = new Bundle();
@@ -541,6 +604,10 @@ public class ProfileFragment extends Fragment {
                 .commit();
     }
 
+    /**
+     * Returns an empty string when the given value is null.
+     * This prevents null values from causing UI or string handling issues.
+     */
     private String safeString(String value) {
         return value == null ? "" : value;
     }

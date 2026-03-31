@@ -36,6 +36,10 @@ public class ViewListsFragment extends Fragment {
     private FirebaseFirestore db;
     private TextView tvListTitle, btnWaitlist, btnPending, btnFinalList, btnCancelled;
 
+    /**
+     * Creates a new instance of the fragment with event details.
+     * Passes eventId and eventName via bundle arguments.
+     */
     public static ViewListsFragment newInstance(String eventId, String eventName) {
         ViewListsFragment fragment = new ViewListsFragment();
         Bundle args = new Bundle();
@@ -45,6 +49,10 @@ public class ViewListsFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Inflates layout, initializes UI components, and sets button listeners.
+     * Loads default waitlist on first display.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -68,6 +76,7 @@ public class ViewListsFragment extends Fragment {
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> getParentFragmentManager().popBackStack());
 
+        // Set button actions for different entrant lists
         btnWaitlist.setOnClickListener(v -> loadListFromArray("waitlistedEntrantIds", "Waitlist"));
         btnPending.setOnClickListener(v -> loadListFromArray("pendingEntrantIds", "Pending List"));
         btnFinalList.setOnClickListener(v -> loadListFromArray("registeredEntrantIds", "Final List"));
@@ -79,6 +88,10 @@ public class ViewListsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Loads entrant list from Firestore based on the selected array field.
+     * Fetches user details and updates RecyclerView.
+     */
     private void loadListFromArray(String arrayField, String titleSuffix) {
         tvListTitle.setText(eventName + " " + titleSuffix);
 
@@ -119,19 +132,26 @@ public class ViewListsFragment extends Fragment {
         }).addOnFailureListener(e -> Log.e("ViewLists", "Error loading event", e));
     }
 
+    /**
+     * Moves entrant from pending list to cancelled list in Firestore.
+     * Updates UI and shows confirmation message.
+     */
     private void cancelEntrant(EntrantInfo entrant, int position) {
         db.collection("events").document(eventId).update(
-            "pendingEntrantIds",   FieldValue.arrayRemove(entrant.id),
-            "cancelledEntrantIds", FieldValue.arrayUnion(entrant.id)
+                "pendingEntrantIds",   FieldValue.arrayRemove(entrant.id),
+                "cancelledEntrantIds", FieldValue.arrayUnion(entrant.id)
         ).addOnSuccessListener(v -> {
             entrantList.remove(position);
             adapter.notifyItemRemoved(position);
             Toast.makeText(getContext(), entrant.name + " cancelled.", Toast.LENGTH_SHORT).show();
         }).addOnFailureListener(e ->
-            Toast.makeText(getContext(), "Failed to cancel entrant.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(getContext(), "Failed to cancel entrant.", Toast.LENGTH_SHORT).show()
         );
     }
 
+    /**
+     * Simple model class representing entrant information.
+     */
     private static class EntrantInfo {
         String id;
         String name;
@@ -144,15 +164,25 @@ public class ViewListsFragment extends Fragment {
         }
     }
 
+    /**
+     * RecyclerView adapter for displaying entrant list.
+     * Optionally shows cancel button for pending entrants.
+     */
     private class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHolder> {
         private List<EntrantInfo> entrants;
         private boolean showCancelButton;
 
+        /**
+         * Initializes adapter with entrant data and UI behavior flag.
+         */
         EntrantAdapter(List<EntrantInfo> entrants, boolean showCancelButton) {
             this.entrants = entrants;
             this.showCancelButton = showCancelButton;
         }
 
+        /**
+         * Inflates item layout for each entrant.
+         */
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -160,6 +190,9 @@ public class ViewListsFragment extends Fragment {
             return new ViewHolder(view);
         }
 
+        /**
+         * Binds entrant data to UI elements and handles button actions.
+         */
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             EntrantInfo entrant = entrants.get(position);
@@ -171,22 +204,28 @@ public class ViewListsFragment extends Fragment {
                 holder.btnView.setText("Remove");
                 holder.btnView.setOnClickListener(v -> {
                     new AlertDialog.Builder(v.getContext())
-                        .setTitle("Remove from Pending")
-                        .setMessage("Remove " + entrant.name + " from pending entrants?")
-                        .setPositiveButton("Remove", (dialog, which) -> cancelEntrant(entrant, position))
-                        .setNegativeButton("Cancel", null)
-                        .show();
+                            .setTitle("Remove from Pending")
+                            .setMessage("Remove " + entrant.name + " from pending entrants?")
+                            .setPositiveButton("Remove", (dialog, which) -> cancelEntrant(entrant, position))
+                            .setNegativeButton("Cancel", null)
+                            .show();
                 });
             } else {
                 holder.btnView.setVisibility(View.GONE);
             }
         }
 
+        /**
+         * Returns total number of entrants in the list.
+         */
         @Override
         public int getItemCount() {
             return entrants.size();
         }
 
+        /**
+         * ViewHolder class for holding entrant item views.
+         */
         class ViewHolder extends RecyclerView.ViewHolder {
             TextView tvName, tvEmail;
             MaterialButton btnView;

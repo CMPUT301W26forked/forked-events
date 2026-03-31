@@ -26,6 +26,10 @@ public class QrScannerFragment extends Fragment {
     private boolean isScanning = false;
     private FirebaseFirestore db;
 
+    /**
+     * Handles camera permission result and starts scanning if granted.
+     * Shows a toast message if permission is denied.
+     */
     private final ActivityResultLauncher<String> cameraPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
                 if (isGranted) {
@@ -35,10 +39,16 @@ public class QrScannerFragment extends Fragment {
                 }
             });
 
+    /**
+     * Constructor initializes fragment with QR scanner layout.
+     */
     public QrScannerFragment() {
         super(R.layout.fragment_qr_scanner);
     }
 
+    /**
+     * Inflates the QR scanner layout.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -46,6 +56,9 @@ public class QrScannerFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_qr_scanner, container, false);
     }
 
+    /**
+     * Initializes UI elements, sets up listeners, and prepares scanner state.
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -53,9 +66,11 @@ public class QrScannerFragment extends Fragment {
         db = FirebaseFirestore.getInstance();
         barcodeScanner = view.findViewById(R.id.barcodeScanner);
 
+        // Initially hide and pause scanner
         barcodeScanner.setVisibility(View.GONE);
         barcodeScanner.pause();
 
+        // Back button navigates to events screen and updates bottom navigation
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
             stopScanning();
 
@@ -70,6 +85,7 @@ public class QrScannerFragment extends Fragment {
             }
         });
 
+        // Start scanning when button is clicked
         view.findViewById(R.id.btnStartScanning).setOnClickListener(v -> {
             if (!isScanning) {
                 checkCameraPermission();
@@ -77,6 +93,10 @@ public class QrScannerFragment extends Fragment {
         });
     }
 
+    /**
+     * Checks if camera permission is granted before starting scan.
+     * Requests permission if not already granted.
+     */
     private void checkCameraPermission() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -86,6 +106,10 @@ public class QrScannerFragment extends Fragment {
         }
     }
 
+    /**
+     * Starts QR scanning and processes the scanned result.
+     * Stops scanning once a QR code is detected.
+     */
     private void startScanning() {
         if (barcodeScanner == null) return;
 
@@ -107,6 +131,9 @@ public class QrScannerFragment extends Fragment {
         });
     }
 
+    /**
+     * Stops QR scanning and hides the scanner view.
+     */
     private void stopScanning() {
         isScanning = false;
         if (barcodeScanner != null) {
@@ -115,6 +142,10 @@ public class QrScannerFragment extends Fragment {
         }
     }
 
+    /**
+     * Extracts event ID from scanned QR value and fetches event from Firestore.
+     * Navigates to event details if event exists.
+     */
     private void findAndOpenEvent(String scannedValue) {
         String scannedEventId = extractEventId(scannedValue);
 
@@ -139,6 +170,10 @@ public class QrScannerFragment extends Fragment {
                 );
     }
 
+    /**
+     * Extracts event ID from QR string (handles prefixed format).
+     * Returns cleaned event ID string.
+     */
     private String extractEventId(String scannedValue) {
         if (scannedValue.startsWith("EVENT_ID:")) {
             return scannedValue.substring("EVENT_ID:".length()).trim();
@@ -146,6 +181,9 @@ public class QrScannerFragment extends Fragment {
         return scannedValue.trim();
     }
 
+    /**
+     * Opens event details fragment with the given event ID.
+     */
     private void openEventDetails(String eventId) {
         Bundle bundle = new Bundle();
         bundle.putString("eventId", eventId);
@@ -160,12 +198,18 @@ public class QrScannerFragment extends Fragment {
                 .commit();
     }
 
+    /**
+     * Stops scanning when fragment is paused.
+     */
     @Override
     public void onPause() {
         super.onPause();
         stopScanning();
     }
 
+    /**
+     * Cleans up scanner resources when view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         stopScanning();
