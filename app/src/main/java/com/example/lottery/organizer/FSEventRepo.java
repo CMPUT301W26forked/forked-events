@@ -453,4 +453,17 @@ public class FSEventRepo implements EventRepo {
                 .addOnSuccessListener(v -> cb.onSuccess(null))
                 .addOnFailureListener(cb::onError);
     }
+
+    /***
+     * US 03.01.01 deletes an event
+     * @param eventId event id
+     * @param cb callback for success or error
+     */
+    @Override
+    public void deleteEvent(String eventId, RepoCallback<Void> cb) {
+        ref(eventId).delete()
+                .addOnSuccessListener(v -> cb.onSuccess(null))
+                .addOnFailureListener(cb::onError);
+
+    }
 }
