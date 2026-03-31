@@ -13,6 +13,7 @@ public class WaitlistService {
     /***
      * Creates a WaitlistService using the FireStore repo.
      */
+
     public WaitlistService(){
         this.repo = new FSWaitlistRepo();
     }

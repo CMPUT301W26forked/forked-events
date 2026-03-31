@@ -15,11 +15,15 @@ import android.widget.Toast;
 
 import com.example.lottery.Event;
 import com.example.lottery.R;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.firestore.WriteBatch;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,6 +47,7 @@ public class ProfileFragment extends Fragment {
     private TextView tvProfileName, tvProfileEmail, tvProfilePhone;
     private Button btnEditDetails;
     private Button btnLogout;
+    private Button btnDeleteProfile;
     private Switch switchNotifications;
 
     private FirebaseFirestore db;
@@ -80,6 +85,7 @@ public class ProfileFragment extends Fragment {
         tvProfilePhone = view.findViewById(R.id.tvProfilePhone);
         btnEditDetails = view.findViewById(R.id.btnEditDetails);
         btnLogout = view.findViewById(R.id.btnLogout);
+        btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
         switchNotifications = view.findViewById(R.id.switchNotifications);
 
         recyclerView = view.findViewById(R.id.rvMyEvents);
@@ -88,6 +94,7 @@ public class ProfileFragment extends Fragment {
         recyclerView.setAdapter(adapter);
 
         btnLogout.setOnClickListener(v -> logoutUser());
+        btnDeleteProfile.setOnClickListener(v -> showDeleteProfileDialog());
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
             requireActivity().getSupportFragmentManager()
@@ -131,6 +138,147 @@ public class ProfileFragment extends Fragment {
                     requireActivity().finish();
                 })
                 .show();
+    }
+
+    private void showDeleteProfileDialog() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Delete Profile")
+                .setMessage("Are you sure you want to permanently delete your profile? This action cannot be undone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Delete", (dialog, which) -> deleteUserProfile())
+                .show();
+    }
+
+    private void deleteUserProfile() {
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+
+        if (currentUser == null) {
+            Toast.makeText(getContext(), "No user logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        db.collection("users")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(userDoc -> {
+                    List<String> registeredEventIds = (List<String>) userDoc.get("registeredEventIds");
+                    if (registeredEventIds == null) {
+                        registeredEventIds = new ArrayList<>();
+                    }
+
+                    removeUserFromEventsAndDeleteData(currentUser, registeredEventIds);
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to load user data", Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    private void removeUserFromEventsAndDeleteData(FirebaseUser currentUser, List<String> registeredEventIds) {
+        List<Task<?>> eventTasks = new ArrayList<>();
+
+        for (String eventId : registeredEventIds) {
+            Task<?> task = db.collection("events")
+                    .document(eventId)
+                    .get()
+                    .continueWithTask(taskSnapshot -> {
+                        if (!taskSnapshot.isSuccessful() || taskSnapshot.getResult() == null || !taskSnapshot.getResult().exists()) {
+                            return Tasks.forResult(null);
+                        }
+
+                        DocumentSnapshot eventDoc = taskSnapshot.getResult();
+
+                        List<String> confirmedIds = (List<String>) eventDoc.get("confirmedEntrantIds");
+                        List<String> waitlistedIds = (List<String>) eventDoc.get("waitlistedEntrantIds");
+
+                        WriteBatch batch = db.batch();
+                        boolean needsUpdate = false;
+
+                        if (confirmedIds != null && confirmedIds.contains(userId)) {
+                            batch.update(eventDoc.getReference(),
+                                    "confirmedEntrantIds", FieldValue.arrayRemove(userId),
+                                    "confirmedCount", Math.max(0, confirmedIds.size() - 1));
+                            needsUpdate = true;
+                        }
+
+                        if (waitlistedIds != null && waitlistedIds.contains(userId)) {
+                            batch.update(eventDoc.getReference(),
+                                    "waitlistedEntrantIds", FieldValue.arrayRemove(userId),
+                                    "waitlistCount", Math.max(0, waitlistedIds.size() - 1));
+                            needsUpdate = true;
+                        }
+
+                        if (needsUpdate) {
+                            return batch.commit();
+                        } else {
+                            return Tasks.forResult(null);
+                        }
+                    });
+
+            eventTasks.add(task);
+        }
+
+        Tasks.whenAllComplete(eventTasks)
+                .addOnSuccessListener(tasks -> deleteNotificationsThenProfile(currentUser))
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to remove user from events", Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    private void deleteNotificationsThenProfile(FirebaseUser currentUser) {
+        db.collection("users")
+                .document(userId)
+                .collection("notification")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<Task<?>> deleteTasks = new ArrayList<>();
+
+                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                        deleteTasks.add(doc.getReference().delete());
+                    }
+
+                    Tasks.whenAllComplete(deleteTasks)
+                            .addOnSuccessListener(tasks -> deleteUserDocumentAndAuth(currentUser))
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(getContext(), "Failed to delete notifications", Toast.LENGTH_SHORT).show()
+                            );
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    private void deleteUserDocumentAndAuth(FirebaseUser currentUser) {
+        db.collection("users")
+                .document(userId)
+                .delete()
+                .addOnSuccessListener(unused -> {
+                    currentUser.delete()
+                            .addOnSuccessListener(unused2 -> {
+                                Toast.makeText(getContext(), "Profile deleted successfully", Toast.LENGTH_SHORT).show();
+
+                                Intent intent = new Intent(requireContext(), LoginActivity.class);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                startActivity(intent);
+
+                                requireActivity().finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                String message = e.getMessage() != null ? e.getMessage() : "";
+
+                                if (message.toLowerCase().contains("recent")) {
+                                    Toast.makeText(getContext(),
+                                            "Please log in again before deleting your account.",
+                                            Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(getContext(),
+                                            "Failed to delete auth account",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to delete profile data", Toast.LENGTH_SHORT).show()
+                );
     }
 
     private void loadUserProfile() {

@@ -19,9 +19,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class AdminDashboardFragment extends Fragment {
 
@@ -32,7 +30,6 @@ public class AdminDashboardFragment extends Fragment {
     private FirebaseFirestore db;
     private TextView tvNotificationLogTitle;
     private TextView tvNotificationLogCount;
-
 
     @Nullable
     @Override
@@ -47,7 +44,7 @@ public class AdminDashboardFragment extends Fragment {
         cvProfileModeration = view.findViewById(R.id.cvProfileModeration);
         cvNotificationLog = view.findViewById(R.id.cvNotificationLog);
         btnTempLogout = view.findViewById(R.id.btnTempLogout);
-        
+
         tvImageModCount = view.findViewById(R.id.tvImageModCount);
         tvEventModCount = view.findViewById(R.id.tvEventModCount);
         tvProfileModCount = view.findViewById(R.id.tvProfileModCount);
@@ -55,12 +52,11 @@ public class AdminDashboardFragment extends Fragment {
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             tvAdminId.setText(FirebaseAuth.getInstance().getCurrentUser().getEmail());
         }
+
         tvNotificationLogTitle = view.findViewById(R.id.tvNotificationsTitle);
         tvNotificationLogCount = view.findViewById(R.id.tvNotificaionLogCount);
 
-
         loadNotificationLogCount();
-
         loadModerationCounts();
         setupClickListeners();
 
@@ -71,7 +67,7 @@ public class AdminDashboardFragment extends Fragment {
      * Loads the counts for different moderation categories from Firestore
      */
     private void loadModerationCounts() {
-        // Load Image Moderation Count (Events with posters)
+        // Image Moderation Count
         db.collection("events")
                 .whereGreaterThan("posterUri", "")
                 .get()
@@ -86,7 +82,7 @@ public class AdminDashboardFragment extends Fragment {
                     }
                 });
 
-        // Load Event Moderation Count (Total events)
+        // Event Moderation Count
         db.collection("events")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
@@ -95,20 +91,36 @@ public class AdminDashboardFragment extends Fragment {
                     }
                 });
 
-        // Load Profile Moderation Count (Users with profile pictures)
+        // Profile Moderation Count
         db.collection("users")
-                .whereGreaterThan("profilePictureUri", "")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+                    int profileCount = 0;
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        String role = doc.getString("role");
+
+                        // organizers are handled separately by organizer removal
+                        if ("admin".equalsIgnoreCase(role) || "organizer".equalsIgnoreCase(role)) {
+                            continue;
+                        }
+
+                        profileCount++;
+                    }
+
                     if (tvProfileModCount != null) {
-                        tvProfileModCount.setText(String.valueOf(querySnapshot.size()));
+                        tvProfileModCount.setText(String.valueOf(profileCount));
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    if (isAdded()) {
+                        Toast.makeText(getContext(), "Failed to load profile count", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
     private void setupClickListeners() {
         cvEventModeration.setOnClickListener(v -> {
-            // Navigate to Event Moderation
             getParentFragmentManager().beginTransaction()
                     .replace(R.id.adminFragmentContainer, new AdminEventModerationFragment())
                     .addToBackStack(null)
@@ -116,7 +128,6 @@ public class AdminDashboardFragment extends Fragment {
         });
 
         cvNotificationLog.setOnClickListener(v -> {
-            // Navigate to Notification logs
             getParentFragmentManager().beginTransaction()
                     .replace(R.id.adminFragmentContainer, new NotificationLogsFragment())
                     .addToBackStack(null)
@@ -131,7 +142,10 @@ public class AdminDashboardFragment extends Fragment {
         });
 
         cvProfileModeration.setOnClickListener(v -> {
-            // Navigate to Profile Moderation
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.adminFragmentContainer, new AdminProfileModerationFragment())
+                    .addToBackStack(null)
+                    .commit();
         });
 
         btnTempLogout.setOnClickListener(v -> {
@@ -143,7 +157,6 @@ public class AdminDashboardFragment extends Fragment {
                 getActivity().finish();
             }
         });
-
     }
 
     private void loadNotificationLogCount() {
@@ -188,6 +201,4 @@ public class AdminDashboardFragment extends Fragment {
                 || "WAITLIST_INVITE".equalsIgnoreCase(type)
                 || "CO_ORGANIZER_INVITE".equalsIgnoreCase(type);
     }
-
-
 }

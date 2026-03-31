@@ -125,12 +125,23 @@
                 android:backgroundTint="@android:color/darker_gray"
                 android:text="Log Out"
                 android:textColor="@color/black" />
+
+            <Button
+                android:id="@+id/btnDeleteProfile"
+                android:layout_width="335dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="@android:color/holo_red_light"
+                android:text="Delete Profile"
+                android:textColor="@android:color/white" />
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:layout_marginTop="12dp"
                 android:gravity="center_vertical">
+
+
 
                 <TextView
                     android:layout_width="0dp"
