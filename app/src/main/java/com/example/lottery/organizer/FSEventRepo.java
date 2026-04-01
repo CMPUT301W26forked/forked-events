@@ -153,7 +153,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", message);
             notification.put("type", "SELECTED");
-            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("timestamp", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
@@ -231,7 +231,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("message", message);
             notification.put("type", "MESSAGE");
             notification.put("audience", audience);
-            notification.put("createdAt", createdAt);
+            notification.put("timestamp", createdAt);
             notification.put("isRead", false);
             db.collection("users")
                     .document(id)
@@ -298,7 +298,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", "Unfortunately, you were not selected in the lottery for " + eventName + "." );
             notification.put("type", "NOT_SELECTED");
-            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("timestamp", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
@@ -330,7 +330,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", "You have been invited to join waiting list for the private event: " + eventName + ".");
             notification.put("type", "WAITLIST_INVITE");
-            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("timestamp", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
@@ -362,7 +362,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", "You have been invited to be a co-organizer for the event: " + eventName + ".");
             notification.put("type", "CO_ORGANIZER_INVITE");
-            notification.put("createdAt", com.google.firebase.Timestamp.now());
+            notification.put("timestamp", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
@@ -403,16 +403,16 @@ public class FSEventRepo implements EventRepo {
     public void getEventComments(String eventId, RepoCallback<List<EventComment>> cb) {
         ref(eventId)
                 .collection("comments")
-                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
                 .addOnSuccessListener(qs -> {
                     List<EventComment> comments = new ArrayList<>();
 
-                    for (QueryDocumentSnapshot doc: qs) {
-                        String authorName = doc.getString("authorName");
-                        String entrantId = doc.getString("entrantId");
+                    for (QueryDocumentSnapshot doc : qs) {
+                        String authorName = doc.getString("userName");
+                        String entrantId = doc.getString("userId");
+                        Timestamp createdAt = doc.getTimestamp("timestamp");
                         String text = doc.getString("text");
-                        Timestamp createdAt = doc.getTimestamp("createdAt");
 
                         if (authorName == null || authorName.isEmpty()) {
                             authorName = doc.getString("name");
@@ -424,18 +424,26 @@ public class FSEventRepo implements EventRepo {
                             text = doc.getString("comment");
                         }
 
+                        String parentCommentId = doc.getString("parentCommentId");
+                        String replyToEntrantId = doc.getString("replyToEntrantId");
+                        String replyToAuthorName = doc.getString("replyToAuthorName");
+                        List<String> mentionedUserNames = (List<String>) doc.get("mentionedUserNames");
+
                         comments.add(new EventComment(
                                 doc.getId(),
-                                authorName != null ? authorName: "Unknown User",
+                                authorName != null ? authorName : "Unknown User",
                                 entrantId,
                                 text != null ? text : "(empty comment)",
-                                createdAt
+                                createdAt,
+                                parentCommentId,
+                                replyToEntrantId,
+                                replyToAuthorName,
+                                mentionedUserNames
                         ));
                     }
                     cb.onSuccess(comments);
                 })
                 .addOnFailureListener(cb::onError);
-
     }
 
     /**

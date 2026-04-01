@@ -17,12 +17,11 @@ import com.example.lottery.organizer.EventService;
 import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.PosterStorageService;
 import com.example.lottery.organizer.RepoCallback;
-import com.google.android.material.button.MaterialButton;
-import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import com.example.lottery.EventComment;
+import java.util.Map;
 
 /**
  * fragment for organizer comment view
@@ -80,7 +79,7 @@ public class ViewCommentsFragment extends Fragment {
             @Override
             public void onSuccess(List<EventComment> comments) {
                 commentlist.clear();
-                commentlist.addAll(comments);
+                commentlist.addAll(buildNestedDisplayList(comments));
                 adapter.notifyDataSetChanged();
             }
 
@@ -93,13 +92,13 @@ public class ViewCommentsFragment extends Fragment {
 
     /**
      * delete a comment
-     * @param comment
+     * @param comment comment to delete
      */
     private void deleteComment(EventComment comment) {
         service.deleteComment(eventId, comment.getCommentId(), new RepoCallback<Void>() {
             @Override
             public void onSuccess(Void result) {
-                Toast.makeText(requireContext(), "Comment delted", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "Comment deleted", Toast.LENGTH_SHORT).show();
                 loadComments();
             }
 
@@ -111,6 +110,47 @@ public class ViewCommentsFragment extends Fragment {
         });
     }
 
+    private List<EventComment> buildNestedDisplayList(List<EventComment> allComments) {
+        List<EventComment> displayList = new ArrayList<>();
+        Map<String, List<EventComment>> childrenMap = new HashMap<>();
+        List<EventComment> parentComments = new ArrayList<>();
 
+        for (EventComment comment : allComments) {
+            String parentId = comment.getParentCommentId();
 
+            if (parentId == null || parentId.trim().isEmpty()) {
+                parentComments.add(comment);
+            } else {
+                childrenMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(comment);
+            }
+        }
+
+        for (EventComment parent : parentComments) {
+            parent.setDepth(0);
+            displayList.add(parent);
+            addRepliesRecursively(parent, childrenMap, displayList, 1);
+        }
+
+        return displayList;
+    }
+
+    private void addRepliesRecursively(EventComment parent,
+                                       Map<String, List<EventComment>> childrenMap,
+                                       List<EventComment> displayList,
+                                       int depth) {
+        if (parent.getCommentId() == null) {
+            return;
+        }
+
+        List<EventComment> replies = childrenMap.get(parent.getCommentId());
+        if (replies == null) {
+            return;
+        }
+
+        for (EventComment reply : replies) {
+            reply.setDepth(depth);
+            displayList.add(reply);
+            addRepliesRecursively(reply, childrenMap, displayList, depth + 1);
+        }
+    }
 }

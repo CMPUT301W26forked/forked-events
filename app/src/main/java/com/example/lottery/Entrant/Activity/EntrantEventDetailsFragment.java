@@ -17,15 +17,12 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.PackageManagerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.lottery.Common.Utils.DeviceManager;
-import com.example.lottery.Entrant.Activity.CommentsAdapter;
-import com.example.lottery.Entrant.Activity.Comment;
 import com.example.lottery.Entrant.Repo.WaitlistCallback;
 import com.example.lottery.Entrant.Service.EntrantService;
 import com.example.lottery.Entrant.Service.WaitlistService;
@@ -42,7 +39,6 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -179,30 +175,126 @@ public class EntrantEventDetailsFragment extends Fragment {
         commentsListener = db.collection("events")
                 .document(eventId)
                 .collection("comments")
-                .orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
                         Toast.makeText(getContext(), "Failed to load comments", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    commentList.clear();
+                    List<Comment> allComments = new ArrayList<>();
 
                     if (value != null) {
                         for (DocumentSnapshot doc : value.getDocuments()) {
-                            Comment comment = doc.toObject(Comment.class);
-                            if (comment != null) {
-                                commentList.add(comment);
+                            Comment comment = new Comment();
+
+                            comment.setCommentId(doc.getId());
+
+                            String userId = doc.getString("userId");
+                            if (userId == null || userId.trim().isEmpty()) {
+                                userId = doc.getString("entrantId");
                             }
+                            comment.setUserId(userId);
+
+                            String userName = doc.getString("userName");
+                            if (userName == null || userName.trim().isEmpty()) {
+                                userName = doc.getString("authorName");
+                            }
+                            if (userName == null || userName.trim().isEmpty()) {
+                                userName = doc.getString("name");
+                            }
+                            if (userName == null || userName.trim().isEmpty()) {
+                                userName = "Unknown User";
+                            }
+                            comment.setUserName(userName);
+
+                            String text = doc.getString("text");
+                            if (text == null || text.trim().isEmpty()) {
+                                text = doc.getString("comment");
+                            }
+                            if (text == null || text.trim().isEmpty()) {
+                                text = "(empty comment)";
+                            }
+                            comment.setText(text);
+
+                            Timestamp timestamp = doc.getTimestamp("timestamp");
+                            if (timestamp == null) {
+                                timestamp = doc.getTimestamp("createdAt");
+                            }
+                            comment.setTimestamp(timestamp);
+
+                            comment.setParentCommentId(doc.getString("parentCommentId"));
+                            comment.setReplyToEntrantId(doc.getString("replyToEntrantId"));
+                            comment.setReplyToAuthorName(doc.getString("replyToAuthorName"));
+
+                            Object mentioned = doc.get("mentionedUserNames");
+                            if (mentioned instanceof List) {
+                                comment.setMentionedUserNames((List<String>) mentioned);
+                            }
+
+                            allComments.add(comment);
                         }
                     }
 
+                    allComments.sort((c1, c2) -> {
+                        Timestamp t1 = c1.getTimestamp();
+                        Timestamp t2 = c2.getTimestamp();
+
+                        if (t1 == null && t2 == null) return 0;
+                        if (t1 == null) return -1;
+                        if (t2 == null) return 1;
+                        return t1.compareTo(t2);
+                    });
+
+                    List<Comment> nestedComments = buildNestedDisplayList(allComments);
+
+                    commentList.clear();
+                    commentList.addAll(nestedComments);
                     commentsAdapter.notifyDataSetChanged();
 
                     if (!commentList.isEmpty()) {
-                        rvComments.scrollToPosition(commentList.size() - 1);
+                        rvComments.scrollToPosition(0);
                     }
                 });
+    }
+
+    private List<Comment> buildNestedDisplayList(List<Comment> allComments) {
+        List<Comment> displayList = new ArrayList<>();
+        Map<String, List<Comment>> childrenMap = new HashMap<>();
+        List<Comment> parentComments = new ArrayList<>();
+
+        for (Comment comment : allComments) {
+            String parentId = comment.getParentCommentId();
+
+            if (parentId == null || parentId.trim().isEmpty()) {
+                parentComments.add(comment);
+            } else {
+                childrenMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(comment);
+            }
+        }
+
+        for (Comment parent : parentComments) {
+            parent.setDepth(0);
+            displayList.add(parent);
+            addRepliesRecursive(parent, childrenMap, displayList, 1);
+        }
+
+        return displayList;
+    }
+
+    private void addRepliesRecursive(Comment parent,
+                                     Map<String, List<Comment>> childrenMap,
+                                     List<Comment> displayList,
+                                     int depth) {
+        if (parent.getCommentId() == null) return;
+
+        List<Comment> replies = childrenMap.get(parent.getCommentId());
+        if (replies == null) return;
+
+        for (Comment reply : replies) {
+            reply.setDepth(depth);
+            displayList.add(reply);
+            addRepliesRecursive(reply, childrenMap, displayList, depth + 1);
+        }
     }
 
     private void postComment() {
@@ -335,10 +427,6 @@ public class EntrantEventDetailsFragment extends Fragment {
                 );
     }
 
-    /**
-     * updated joinWaitlist method for geo collection
-     * @param btnJoin
-     */
     private void joinWaitlist(MaterialButton btnJoin) {
         if (!"Open".equalsIgnoreCase(eventStatus)) {
             Toast.makeText(getContext(), "Registration is closed.", Toast.LENGTH_SHORT).show();
@@ -363,10 +451,6 @@ public class EntrantEventDetailsFragment extends Fragment {
         });
     }
 
-    /**
-     * fetch entrant name
-     * @param cb
-     */
     private void resolveEntrantName(EntrantNameCallBack cb) {
         db.collection("users")
                 .document(entrantId)
@@ -387,11 +471,6 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .addOnFailureListener(e -> cb.onResult("Anonymous user"));
     }
 
-    /**
-     * ask for allowance of geo collection and process next corresponding step
-     * @param btnJoin
-     * @param entrantName
-     */
     private void showLocationChoiceDialog(MaterialButton btnJoin, String entrantName) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Use current location?")
@@ -408,59 +487,42 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .show();
     }
 
-    /**
-     * decide how to request location
-     */
     private void requestLocationForWaitlistJoin() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
             fetchCurrentLocationAndJoin();
             return;
         }
 
         locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
-
     }
 
-    /**
-     * fetch current location and join
-     */
     @SuppressLint("MissingPermission")
     private void fetchCurrentLocationAndJoin() {
         fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-            .addOnSuccessListener(location -> {
-                if (location != null) {
-                    completePendingJoinWithLocation(location.getLatitude(), location.getLongitude()
-                    );
-                } else {
-                    tryLastKnownLocation();
-                }
-            })
-            .addOnFailureListener(e -> tryLastKnownLocation());
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        completePendingJoinWithLocation(location.getLatitude(), location.getLongitude());
+                    } else {
+                        tryLastKnownLocation();
+                    }
+                })
+                .addOnFailureListener(e -> tryLastKnownLocation());
     }
 
-    /**
-     * try last location
-     */
     @SuppressLint("MissingPermission")
     private void tryLastKnownLocation() {
         fusedLocationProviderClient.getLastLocation()
-            .addOnSuccessListener(location -> {
-                if (location != null) {
-                    completePendingJoinWithLocation(location.getLatitude(), location.getLongitude()
-                    );
-                } else {
-                    fallbackToJoinWithoutLocation("Could not fetch your location");
-                }
-            })
-            .addOnFailureListener(e -> fallbackToJoinWithoutLocation("Could not fetch your location")
-            );
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        completePendingJoinWithLocation(location.getLatitude(), location.getLongitude());
+                    } else {
+                        fallbackToJoinWithoutLocation("Could not fetch your location");
+                    }
+                })
+                .addOnFailureListener(e -> fallbackToJoinWithoutLocation("Could not fetch your location"));
     }
 
-    /**
-     * proceed to final join
-     * @param latitude
-     * @param longitude
-     */
     private void completePendingJoinWithLocation(Double latitude, Double longitude) {
         MaterialButton joinButton = pendingJoinButton;
         String entrantName = pendingEntrantName;
@@ -471,17 +533,10 @@ public class EntrantEventDetailsFragment extends Fragment {
         finalizeWaitlistJoin(joinButton, entrantName, latitude, longitude);
     }
 
-    /**
-     * overload
-     */
     private void fallbackToJoinWithoutLocation() {
         fallbackToJoinWithoutLocation(null);
     }
 
-
-    /**
-     * join without geo sampling
-     */
     private void fallbackToJoinWithoutLocation(String message) {
         MaterialButton joinButton = pendingJoinButton;
         String entrantName = pendingEntrantName;
@@ -496,22 +551,13 @@ public class EntrantEventDetailsFragment extends Fragment {
         }
     }
 
-    /**
-     * reset
-     */
     private void clearPendingJoinState() {
         pendingEntrantName = null;
         pendingJoinButton = null;
     }
 
-    /**
-     * old join method
-     * @param btnJoin
-     * @param entrantName
-     * @param latitude
-     * @param longitude
-     */
-    private void finalizeWaitlistJoin(MaterialButton btnJoin, String entrantName, Double latitude, Double longitude) {
+    private void finalizeWaitlistJoin(MaterialButton btnJoin, String entrantName,
+                                      Double latitude, Double longitude) {
         entrantService.signUpForEvent(entrantName, eventId);
 
         db.collection("events")
@@ -524,12 +570,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                         db.collection("users")
                                 .document(entrantId)
                                 .update("registeredEventIds", FieldValue.arrayUnion(eventId))
-                                .addOnSuccessListener(unused2 -> {
-                                    writeWaitlistEntry(btnJoin, entrantName, latitude, longitude, null);
-                                })
-                                .addOnFailureListener(e -> {
-                                    writeWaitlistEntry(btnJoin, entrantName, latitude, longitude, "Joined but failed to update profile" + e.getMessage());
-                                })
+                                .addOnSuccessListener(unused2 ->
+                                        writeWaitlistEntry(btnJoin, entrantName, latitude, longitude, null))
+                                .addOnFailureListener(e ->
+                                        writeWaitlistEntry(btnJoin, entrantName, latitude, longitude,
+                                                "Joined but failed to update profile" + e.getMessage()))
                 )
                 .addOnFailureListener(e -> {
                     btnJoin.setEnabled(true);
@@ -537,15 +582,8 @@ public class EntrantEventDetailsFragment extends Fragment {
                 });
     }
 
-    /**
-     * old join method
-     * @param btnJoin
-     * @param entrantName
-     * @param latitude
-     * @param longitude
-     * @param partialWarning
-     */
-    private void writeWaitlistEntry(MaterialButton btnJoin, String entrantName, Double latitude, Double longitude, String partialWarning) {
+    private void writeWaitlistEntry(MaterialButton btnJoin, String entrantName,
+                                    Double latitude, Double longitude, String partialWarning) {
         waitlistService.joinWaitList(eventId, entrantId, entrantName, latitude, longitude,
                 new WaitlistCallback<Void>() {
                     @Override
@@ -554,7 +592,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                         isOnWaitlist = true;
                         setLeaveWaitlistStyle(btnJoin);
                         btnJoin.setEnabled(true);
-                        Toast.makeText(getContext(), partialWarning != null ? partialWarning : "Joined waitlist successfully", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(),
+                                partialWarning != null ? partialWarning : "Joined waitlist successfully",
+                                Toast.LENGTH_SHORT).show();
                     }
 
                     @Override
@@ -562,7 +602,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                         isOnWaitlist = true;
                         setLeaveWaitlistStyle(btnJoin);
                         btnJoin.setEnabled(true);
-                        Toast.makeText(getContext(), "Joined waitlist, but failed to update profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(),
+                                "Joined waitlist, but failed to update profile: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -596,18 +638,17 @@ public class EntrantEventDetailsFragment extends Fragment {
                                 .document(entrantId)
                                 .update("registeredEventIds", FieldValue.arrayRemove(eventId))
                                 .addOnSuccessListener(unused2 -> {
-                                    removeWaitlistEntry(btnJoin,"Left waitlist successfully");
+                                    removeWaitlistEntry(btnJoin, "Left waitlist successfully");
                                     Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
                                 })
-                                .addOnFailureListener(e -> {
-                                    removeWaitlistEntry(btnJoin, "Left waitlist, but failed to update profile: "+e.getMessage());
-                                })
+                                .addOnFailureListener(e ->
+                                        removeWaitlistEntry(btnJoin,
+                                                "Left waitlist, but failed to update profile: " + e.getMessage()))
                 )
                 .addOnFailureListener(e -> {
                     btnJoin.setEnabled(true);
                     Toast.makeText(getContext(), "Failed to leave waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
-
     }
 
     private void removeWaitlistEntry(MaterialButton btnJoin, String baseMessage) {
@@ -625,7 +666,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                 isOnWaitlist = false;
                 setJoinWaitlistStyle(btnJoin);
                 btnJoin.setEnabled(true);
-                Toast.makeText(getContext(), baseMessage + "waitlist map data cleanup failed", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(),
+                        baseMessage + "waitlist map data cleanup failed",
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -649,10 +692,12 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .setPositiveButton("Yes", (dialog, which) ->
                         waitlistService.stayInList(eventId, entrantId, new WaitlistCallback<Void>() {
                             @Override
-                            public void onSuccess(Void r) {}
+                            public void onSuccess(Void r) {
+                            }
 
                             @Override
-                            public void onError(Exception e) {}
+                            public void onError(Exception e) {
+                            }
                         }))
                 .setNegativeButton("No", (dialog, which) -> leaveWaitlist(btnJoin))
                 .setCancelable(false)
@@ -670,6 +715,4 @@ public class EntrantEventDetailsFragment extends Fragment {
     private interface EntrantNameCallBack {
         void onResult(String entrantName);
     }
-
-
 }

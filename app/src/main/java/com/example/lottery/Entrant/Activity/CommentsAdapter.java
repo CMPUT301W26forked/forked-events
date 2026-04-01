@@ -1,5 +1,6 @@
 package com.example.lottery.Entrant.Activity;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,27 +20,15 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
     private final List<Comment> commentList;
     private String organizerId;
 
-    /**
-     * Constructor initializes the adapter with a list of comments.
-     * This list is used to populate the RecyclerView.
-     */
     public CommentsAdapter(List<Comment> commentList) {
         this.commentList = commentList;
     }
 
-    /**
-     * Sets the organizer ID to identify organizer comments.
-     * Triggers UI refresh to update organizer badges.
-     */
     public void setOrganizerId(String organizerId) {
         this.organizerId = organizerId;
         notifyDataSetChanged();
     }
 
-    /**
-     * Creates a new ViewHolder by inflating the comment layout.
-     * Called when RecyclerView needs a new item view.
-     */
     @NonNull
     @Override
     public CommentViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -48,16 +37,30 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         return new CommentViewHolder(view);
     }
 
-    /**
-     * Binds comment data to the ViewHolder for display.
-     * Also handles organizer badge visibility and timestamp formatting.
-     */
     @Override
     public void onBindViewHolder(@NonNull CommentViewHolder holder, int position) {
         Comment comment = commentList.get(position);
 
+        Log.d("ENTRANT_DEPTH_CHECK",
+                "text=" + comment.getText()
+                        + ", depth=" + comment.getDepth()
+                        + ", parent=" + comment.getParentCommentId());
+
         holder.tvCommentUser.setText(comment.getUserName());
         holder.tvCommentText.setText(comment.getText());
+
+        if (comment.isReply()) {
+            holder.tvReplyInfo.setVisibility(View.VISIBLE);
+
+            String replyToName = comment.getReplyToAuthorName();
+            if (replyToName == null || replyToName.trim().isEmpty()) {
+                holder.tvReplyInfo.setText("Reply");
+            } else {
+                holder.tvReplyInfo.setText("Replying to @" + replyToName);
+            }
+        } else {
+            holder.tvReplyInfo.setVisibility(View.GONE);
+        }
 
         if (organizerId != null && organizerId.equals(comment.getUserId())) {
             holder.tvOrganizerBadge.setVisibility(View.VISIBLE);
@@ -72,30 +75,38 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         } else {
             holder.tvCommentTime.setText("");
         }
+
+        int left = dpToPx(holder.itemView, 12 + (comment.getDepth() * 28));
+        holder.commentContentContainer.setPadding(
+                left,
+                dpToPx(holder.itemView, 12),
+                dpToPx(holder.itemView, 12),
+                dpToPx(holder.itemView, 12)
+        );
     }
 
-    /**
-     * Returns the total number of comments in the list.
-     * Used by RecyclerView to determine list size.
-     */
     @Override
     public int getItemCount() {
         return commentList.size();
     }
 
-    static class CommentViewHolder extends RecyclerView.ViewHolder {
-        TextView tvCommentUser, tvCommentText, tvCommentTime, tvOrganizerBadge;
+    private int dpToPx(View view, int dp) {
+        float density = view.getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
+    }
 
-        /**
-         * Initializes all view references for a single comment item.
-         * Called when a ViewHolder is created.
-         */
+    static class CommentViewHolder extends RecyclerView.ViewHolder {
+        View commentContentContainer;
+        TextView tvCommentUser, tvCommentText, tvCommentTime, tvOrganizerBadge, tvReplyInfo;
+
         public CommentViewHolder(@NonNull View itemView) {
             super(itemView);
+            commentContentContainer = itemView.findViewById(R.id.commentContentContainer);
             tvCommentUser = itemView.findViewById(R.id.tvCommentUser);
             tvCommentText = itemView.findViewById(R.id.tvCommentText);
             tvCommentTime = itemView.findViewById(R.id.tvCommentTime);
             tvOrganizerBadge = itemView.findViewById(R.id.tvOrganizerBadge);
+            tvReplyInfo = itemView.findViewById(R.id.tvReplyInfo);
         }
     }
 }

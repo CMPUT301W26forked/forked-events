@@ -9,6 +9,7 @@
     app:cardElevation="0dp">
 
     <LinearLayout
+        android:id="@+id/commentContentContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -22,6 +23,16 @@
             android:textColor="@color/black"
             android:textSize="16sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvReplyInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/replying_to_user"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/tvCommentText"
@@ -53,10 +64,10 @@
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:backgroundTint="@color/black"
                 android:text="Delete"
                 android:textAllCaps="false"
                 android:textColor="@color/white"
-                android:backgroundTint="@color/black"
                 app:cornerRadius="12dp" />
         </LinearLayout>
 

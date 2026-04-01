@@ -330,7 +330,7 @@ public class EventBuilderFragment extends Fragment {
      * init google places service
      */
     private void initPlacesClient() {
-        String apikey = BuildConfig.PLACES_API_KEY;
+        String apikey = "test"; //BuildConfig.PLACES_API_KEY;
 
         if (TextUtils.isEmpty(apikey)) {
             Toast.makeText(requireContext(), "Places API key is not configured", Toast.LENGTH_SHORT).show();
