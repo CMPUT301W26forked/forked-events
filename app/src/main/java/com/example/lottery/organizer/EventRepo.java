@@ -130,4 +130,13 @@ public interface EventRepo {
      * @param cb
      */
     void deleteEventComment(String eventId, String commentId, RepoCallback<Void> cb);
+
+    /**
+     * US 03.01.01 Deletes event document
+     * @param eventId event id
+     * @param cb callback for success or failure
+     */
+    void deleteEvent(String eventId, RepoCallback<Void> cb);
 }
+
+

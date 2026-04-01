@@ -30,6 +30,8 @@ import com.example.lottery.Entrant.Repo.WaitlistCallback;
 import com.example.lottery.Entrant.Service.EntrantService;
 import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
+import com.example.lottery.organizer.FSEventRepo;
+import com.example.lottery.organizer.RepoCallback;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
@@ -129,6 +131,28 @@ public class AdminEventModerationDetailFragment extends Fragment {
                     .replace(R.id.adminFragmentContainer, AdminRemoveOrganizerFragment.newInstance(organizerId, organizerName))
                     .addToBackStack(null)
                     .commit();
+        });
+
+        view.findViewById(R.id.btnRemoveEvent).setOnClickListener(v->{
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Delete Event")
+                    .setMessage("Are you sure you want to delete "+eventName+"?")
+                    .setPositiveButton("Delete", (dialog,which) -> {
+                FSEventRepo repo = new FSEventRepo();
+                repo.deleteEvent(eventId, new RepoCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        Toast.makeText(getContext(), "Event deleted!", Toast.LENGTH_SHORT).show();
+                        getParentFragmentManager().popBackStack();
+                    }
+                    @Override
+                    public void onError(Exception e) {
+                        Toast.makeText(getContext(), "Failed to delete event.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            })
+                    .setNegativeButton("Cancel", null)
+                    .show();
         });
 
 
@@ -309,6 +333,8 @@ public class AdminEventModerationDetailFragment extends Fragment {
             commentsListener = null;
         }
     }
+
+
 
 
 }
