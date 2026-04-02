@@ -36,6 +36,12 @@ public class AdminRemoveOrganizerFragment extends Fragment {
     private TextView tvEventCount;
     private LinearLayout EventList;
 
+    /**
+     * create new instance
+     * @param organizerId   ID of organizer
+     * @param organizerName Name of organizer
+     * @return new instance
+     */
     public static AdminRemoveOrganizerFragment newInstance(String organizerId, String organizerName) {
         AdminRemoveOrganizerFragment fragment = new AdminRemoveOrganizerFragment();
         Bundle args = new Bundle();

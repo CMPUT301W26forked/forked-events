@@ -31,9 +31,14 @@ public class AdminDashboardFragment extends Fragment {
     private View cvEventModeration, cvImageModeration, cvProfileModeration, cvNotificationLog;
     private Button btnTempLogout;
     private TextView tvImageModCount, tvEventModCount, tvProfileModCount;
+    private TextView tvTotalUser, tvTotalEvents, tvTotalModeration;
     private FirebaseFirestore db;
     private TextView tvNotificationLogTitle;
     private TextView tvNotificationLogCount;
+    private int imageModCount = 0;
+    private int eventModCount = 0;
+    private int profileModCount = 0;
+    private int commentModCount = 0;
 
     /**
      * Initializes the UI, Firebase instance, and loads dashboard data.
@@ -55,6 +60,9 @@ public class AdminDashboardFragment extends Fragment {
         tvImageModCount = view.findViewById(R.id.tvImageModCount);
         tvEventModCount = view.findViewById(R.id.tvEventModCount);
         tvProfileModCount = view.findViewById(R.id.tvProfileModCount);
+        tvTotalUser = view.findViewById(R.id.tvTotalUser);
+        tvTotalEvents = view.findViewById(R.id.tvTotalEvents);
+        tvTotalModeration = view.findViewById(R.id.tvTotalModeration);
 
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
             tvAdminId.setText(FirebaseAuth.getInstance().getCurrentUser().getEmail());
@@ -79,9 +87,11 @@ public class AdminDashboardFragment extends Fragment {
                 .whereGreaterThan("posterUri", "")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+                    imageModCount = querySnapshot.size();
                     if (tvImageModCount != null) {
-                        tvImageModCount.setText(String.valueOf(querySnapshot.size()));
+                        tvImageModCount.setText(String.valueOf(imageModCount));
                     }
+                    updateTotalModeration();
                 })
                 .addOnFailureListener(e -> {
                     if (isAdded()) {
@@ -93,9 +103,14 @@ public class AdminDashboardFragment extends Fragment {
         db.collection("events")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
+                    eventModCount = querySnapshot.size();
                     if (tvEventModCount != null) {
-                        tvEventModCount.setText(String.valueOf(querySnapshot.size()));
+                        tvEventModCount.setText(String.valueOf(eventModCount));
                     }
+                    if (tvTotalEvents != null) {
+                        tvTotalEvents.setText(String.valueOf(eventModCount));
+                    }
+                    updateTotalModeration();
                 });
 
         // Profile Moderation Count (excluding admins and organizers)
@@ -114,15 +129,39 @@ public class AdminDashboardFragment extends Fragment {
                         profileCount++;
                     }
 
+                    profileModCount = profileCount;
                     if (tvProfileModCount != null) {
-                        tvProfileModCount.setText(String.valueOf(profileCount));
+                        tvProfileModCount.setText(String.valueOf(profileModCount));
                     }
+                    if (tvTotalUser != null) {
+                        tvTotalUser.setText(String.valueOf(profileModCount));
+                    }
+                    updateTotalModeration();
                 })
                 .addOnFailureListener(e -> {
                     if (isAdded()) {
                         Toast.makeText(getContext(), "Failed to load profile count", Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        // Comment Moderation Count
+        db.collectionGroup("comments")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    commentModCount = querySnapshot.size();
+                    updateTotalModeration();
+                })
+                .addOnFailureListener(e -> {
+                    if (isAdded()) {
+                        Toast.makeText(getContext(), "Failed to load comment count", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void updateTotalModeration() {
+        if (tvTotalModeration != null) {
+            tvTotalModeration.setText(String.valueOf(imageModCount + eventModCount + profileModCount + commentModCount));
+        }
     }
 
     /**

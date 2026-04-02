@@ -14,6 +14,7 @@ import static org.mockito.Mockito.*;
  * US 02.02.01 - View List of Entrants Who Joined Organizers Waiting List
  * US 02.06.01 - View a List of All Invited (Pending List)
  * US 02.06.03 - View a Final List of Entrants Who Enrolled for the Event
+ * US 02.06.04 - View a List of Entrants Who Did Not Sign Up (Cancelled List)
  */
 public class viewEntrantListsTest {
 
@@ -92,6 +93,32 @@ public class viewEntrantListsTest {
         });
 
         verify(repo).getRegisteredEntrantIds(eq("event42"), any());
+        assertEquals(expected, result[0]);
+    }
+
+    /**
+     * US 02.06.04 - Organizer requests the cancelled list and receives the correct entrant IDs.
+     */
+    @Test
+    public void getCancelledList_returnsCancelledEntrantIds() {
+        EventRepo repo = mock(EventRepo.class);
+        OrganizerListService service = new OrganizerListService(repo);
+
+        List<String> expected = Arrays.asList("u9", "u10");
+
+        doAnswer(inv -> {
+            RepoCallback<List<String>> cb = inv.getArgument(1);
+            cb.onSuccess(expected);
+            return null;
+        }).when(repo).getCancelledEntrantIds(anyString(), any());
+
+        final List<String>[] result = new List[1];
+        service.getCancelledList("event42", new RepoCallback<List<String>>() {
+            @Override public void onSuccess(List<String> ids) { result[0] = ids; }
+            @Override public void onError(Exception e) {}
+        });
+
+        verify(repo).getCancelledEntrantIds(eq("event42"), any());
         assertEquals(expected, result[0]);
     }
 }
