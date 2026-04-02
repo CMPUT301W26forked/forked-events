@@ -738,7 +738,7 @@ public class EntrantEventDetailsFragment extends Fragment {
 
     private void setJoinWaitlistStyle(MaterialButton btn) {
         btn.setText("Join Waitlist");
-        btn.setBackgroundTintList(ColorStateList.valueOf(0xFF9575CD));
+        btn.setBackgroundTintList(ColorStateList.valueOf(0x7ab531));
     }
 
     private void setLeaveWaitlistStyle(MaterialButton btn) {
