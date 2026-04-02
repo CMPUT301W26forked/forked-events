@@ -14,6 +14,15 @@ public class NotificationLogItem {
     private int recipientCount;
     private String audience;
 
+    /**
+     * constructor for notification log item
+     * @param eventName name of event
+     * @param eventId   id of event
+     * @param type
+     * @param message
+     * @param createdAt time created the notification
+     */
+
     public NotificationLogItem(String eventName, String eventId, String type, String message, Timestamp createdAt, int recipientCount, String audience) {
         this.eventName = eventName;
         this.eventId = eventId;

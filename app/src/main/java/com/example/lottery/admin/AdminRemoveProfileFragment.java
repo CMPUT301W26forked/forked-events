@@ -41,6 +41,13 @@ public class AdminRemoveProfileFragment extends Fragment {
     /**
      * Creates a new instance of this fragment with user data passed as arguments.
      * This is used when navigating to the remove profile screen from admin panel.
+     *
+     * @param userId         Unique identifier for the user
+     * @param name           Display name of the user
+     * @param email          Email address of the user
+     * @param phone          Phone number of the user
+     * @param role           Role assigned to the user
+     * @param profilePictureUri URI string pointing to the user's profile picture
      */
     public static AdminRemoveProfileFragment newInstance(String userId, String name, String email,
                                                          String phone, String role, String profilePictureUri) {
