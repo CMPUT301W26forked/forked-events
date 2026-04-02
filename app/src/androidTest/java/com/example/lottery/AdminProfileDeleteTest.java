@@ -95,7 +95,7 @@ public class AdminProfileDeleteTest {
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()));
 
-        onView(withText("This will remove the user's profile from the app and clean their event references. This does not delete their Firebase login account."))
+        onView(withText("This will permanently delete the profile."))
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()));
     }
