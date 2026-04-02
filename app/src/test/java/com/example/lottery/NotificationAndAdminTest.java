@@ -22,30 +22,38 @@ public class NotificationAndAdminTest {
     private static final String TEST_ENTRANT_ID = "entrant_abc";
     private static final String TEST_EVENT_NAME = "Test Swimming Lessons";
 
-    /** win notification has correct type */
+    /**
+     * win notification has correct type
+     */
     @Test
-    public void winNotification_hasCorrectType() {
+    public void winNotificationHasCorrectType() {
         String type = "SELECTED";
         assertEquals("SELECTED", type);
     }
 
-    /** loss notification has correct type */
+    /**
+     * loss notification has correct type
+     */
     @Test
-    public void lossNotification_hasCorrectType() {
+    public void lossNotificationHasCorrectType() {
         String type = "NOT_SELECTED";
         assertEquals("NOT_SELECTED", type);
     }
 
-    /** loss message mentions event name */
+    /**
+     * loss message mentions event name
+     */
     @Test
-    public void lossNotification_messageMentionsEventName() {
+    public void lossNotificationMessageMentionsEventName() {
         String message = "Unfortunately, you were not selected in the lottery for " + TEST_EVENT_NAME + ".";
         assertTrue(message.contains(TEST_EVENT_NAME));
     }
 
-    /** notification not sent when opted out */
+    /**
+     * notification not sent when opted out
+     */
     @Test
-    public void optOut_whenDisabled_notificationNotSent() {
+    public void optOut_whenDisabledNotificationNotSent() {
         boolean notificationsEnabled = false;
         boolean sent = false;
         if (notificationsEnabled) sent = true;
@@ -53,31 +61,39 @@ public class NotificationAndAdminTest {
     }
 
 
-    /** waitlist invite has correct type */
+    /**
+     * waitlist invite has correct type
+     */
     @Test
-    public void waitlistInvite_hasCorrectType() {
+    public void waitlistInviteHasCorrectType() {
         String type = "WAITLIST_INVITE";
         assertEquals("WAITLIST_INVITE", type);
     }
 
 
-    /** co-organizer invite has correct type */
+    /**
+     * co-organizer invite has correct type
+     */
     @Test
-    public void coOrganizerInvite_hasCorrectType() {
+    public void coOrganizerInviteHasCorrectType() {
         String type = "CO_ORGANIZER_INVITE";
         assertEquals("CO_ORGANIZER_INVITE", type);
     }
 
-    /** co-organizer invite message mentions event name */
+    /**
+     * co-organizer invite message mentions event name
+     */
     @Test
-    public void coOrganizerInvite_messageMentionsEventName() {
+    public void coOrganizerInviteMessageMentionsEventName() {
         String message = "You have been invited to be a co-organizer for the event: " + TEST_EVENT_NAME + ".";
         assertTrue(message.contains(TEST_EVENT_NAME));
     }
 
-    /** delete event removes it from list */
+    /**
+     * delete event removes it from list
+     */
     @Test
-    public void deleteEvent_removesFromList() {
+    public void deleteEventRemovesFromList() {
         List<String> events = new ArrayList<>(Arrays.asList("event_1", TEST_EVENT_ID));
         events.remove(TEST_EVENT_ID);
         assertFalse(events.contains(TEST_EVENT_ID));
