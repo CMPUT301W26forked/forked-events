@@ -117,7 +117,7 @@ public class AdminRemoveProfileFragment extends Fragment {
     private void showConfirmDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Remove profile")
-                .setMessage("This will remove the user's profile from the app and clean their event references. This does not delete their Firebase login account.")
+                .setMessage("This will permanently delete the profile.")
                 .setPositiveButton("Confirm", (dialog, which) -> removeProfile())
                 .setNegativeButton("Cancel", null)
                 .show();

@@ -61,7 +61,9 @@ public class QrEventDetailsFragment extends Fragment {
             String lotteryInfo = args.getString("lotteryInfo", "");
             String joinedInfo = args.getString("joinedInfo", "");
 
-            tvHeaderTitle.setText("Event Details");
+            if (tvHeaderTitle != null) {
+                tvHeaderTitle.setText("Event Details");
+            }
             tvEventName.setText(title);
             tvStatusTag.setText(status);
             tvDescription.setText(description);
