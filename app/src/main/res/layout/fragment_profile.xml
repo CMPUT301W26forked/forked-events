@@ -110,28 +110,28 @@
 
             <Button
                 android:id="@+id/btnEditDetails"
-                android:layout_width="335dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:backgroundTint="@android:color/darker_gray"
+                android:backgroundTint="#212121"
                 android:text="Edit Details"
-                android:textColor="@color/black" />
+                android:textColor="@color/white" />
 
             <Button
                 android:id="@+id/btnLogout"
-                android:layout_width="335dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:backgroundTint="@android:color/darker_gray"
+                android:backgroundTint="#212121"
                 android:text="Log Out"
-                android:textColor="@color/black" />
+                android:textColor="@color/white" />
 
             <Button
                 android:id="@+id/btnDeleteProfile"
-                android:layout_width="335dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
-                android:backgroundTint="@android:color/holo_red_light"
+                android:backgroundTint="#c72c2c"
                 android:text="Delete Profile"
                 android:textColor="@android:color/white" />
             <LinearLayout

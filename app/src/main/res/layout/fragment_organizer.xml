@@ -28,7 +28,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="16dp"
-        android:backgroundTint="#5C4BD1"
+        android:backgroundTint="#7ab531"
         android:paddingVertical="12dp"
         android:text="Create New Event"
         android:textAllCaps="false"
