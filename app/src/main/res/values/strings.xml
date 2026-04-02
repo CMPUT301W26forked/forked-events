@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">Lottery</string>
-    <string name="temp_logout_admin">temporary button to log out as admin</string>
+    <string name="logout_admin">log out as admin</string>
     <string name="back">Back</string>
     <string name="show_qr">Show QR</string>
     <string name="join_waitlist">Join Waitlist</string>

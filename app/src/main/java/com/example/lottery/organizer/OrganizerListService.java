@@ -33,4 +33,11 @@ public class OrganizerListService {
     public void getEnrolledList(String eventId, RepoCallback<List<String>> cb) {
         repo.getRegisteredEntrantIds(eventId, cb);
     }
+
+    /**
+     * US 02.06.04 - Get entrants who were cancelled (did not sign up for the event).
+     */
+    public void getCancelledList(String eventId, RepoCallback<List<String>> cb) {
+        repo.getCancelledEntrantIds(eventId, cb);
+    }
 }

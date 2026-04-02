@@ -384,13 +384,18 @@
         <Button
             android:id="@+id/btnTempLogout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_marginTop="24dp"
-            android:text="@string/temp_logout_admin"
+            android:text="@string/logout_admin"
             app:layout_constraintTop_toBottomOf="@id/cvStats"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:cornerRadius="12dp"
+            android:textColor="@color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="@color/black"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>
