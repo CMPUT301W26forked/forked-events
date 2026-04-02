@@ -103,7 +103,7 @@ public class AdminEventModerationDetailFragment extends Fragment {
         rvComments = view.findViewById(R.id.rvComments);
 
         commentList = new ArrayList<>();
-        commentsAdapter = new CommentsAdapter(commentList);
+        commentsAdapter = new CommentsAdapter(commentList, null);
         rvComments.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvComments.setAdapter(commentsAdapter);
 

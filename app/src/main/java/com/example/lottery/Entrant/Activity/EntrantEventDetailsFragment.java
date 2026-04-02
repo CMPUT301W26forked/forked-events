@@ -71,6 +71,9 @@ public class EntrantEventDetailsFragment extends Fragment {
     private MaterialButton pendingJoinButton;
     private String pendingEntrantName;
 
+    // NEW: keeps track of which comment is being replied to
+    private Comment selectedReplyComment = null;
+
     public EntrantEventDetailsFragment() {
     }
 
@@ -114,7 +117,33 @@ public class EntrantEventDetailsFragment extends Fragment {
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         commentList = new ArrayList<>();
-        commentsAdapter = new CommentsAdapter(commentList);
+
+        commentsAdapter = new CommentsAdapter(commentList, comment -> {
+            // tap Reply on same comment again to cancel reply mode
+            if (selectedReplyComment != null
+                    && selectedReplyComment.getCommentId() != null
+                    && selectedReplyComment.getCommentId().equals(comment.getCommentId())) {
+                clearReplyMode();
+                Toast.makeText(getContext(), "Reply cancelled", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            selectedReplyComment = comment;
+
+            String replyName = comment.getUserName();
+            if (replyName == null || replyName.trim().isEmpty()) {
+                replyName = "user";
+            }
+
+            etComment.setHint("Replying to @" + replyName);
+            etComment.requestFocus();
+            etComment.setSelection(etComment.getText() != null ? etComment.getText().length() : 0);
+
+            Toast.makeText(getContext(),
+                    "Replying to @" + replyName + ". Tap Reply again to cancel.",
+                    Toast.LENGTH_SHORT).show();
+        });
+
         rvComments.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvComments.setAdapter(commentsAdapter);
 
@@ -142,6 +171,7 @@ public class EntrantEventDetailsFragment extends Fragment {
 
         btnShowQr.setOnClickListener(v -> {
             if (eventId == null) return;
+
             QrDisplayFragment fragment = new QrDisplayFragment();
             Bundle args = new Bundle();
             args.putString("eventId", eventId);
@@ -326,26 +356,59 @@ public class EntrantEventDetailsFragment extends Fragment {
                         userName = "Anonymous User";
                     }
 
-                    Comment comment = new Comment(
-                            entrantId,
-                            userName,
-                            commentText,
-                            Timestamp.now()
-                    );
+                    Map<String, Object> commentData = new HashMap<>();
+                    commentData.put("userId", entrantId);
+                    commentData.put("entrantId", entrantId);
+                    commentData.put("userName", userName);
+                    commentData.put("authorName", userName);
+                    commentData.put("text", commentText);
+                    commentData.put("timestamp", Timestamp.now());
+
+                    // If replying, include reply metadata
+                    if (selectedReplyComment != null) {
+                        commentData.put("parentCommentId", selectedReplyComment.getCommentId());
+                        commentData.put("replyToEntrantId", selectedReplyComment.getUserId());
+                        commentData.put("replyToAuthorName", selectedReplyComment.getUserName());
+
+                        List<String> mentionedNames = new ArrayList<>();
+                        if (selectedReplyComment.getUserName() != null
+                                && !selectedReplyComment.getUserName().trim().isEmpty()) {
+                            mentionedNames.add(selectedReplyComment.getUserName());
+                        }
+                        commentData.put("mentionedUserNames", mentionedNames);
+                    } else {
+                        commentData.put("parentCommentId", null);
+                        commentData.put("replyToEntrantId", null);
+                        commentData.put("replyToAuthorName", null);
+                        commentData.put("mentionedUserNames", new ArrayList<String>());
+                    }
 
                     db.collection("events")
                             .document(eventId)
                             .collection("comments")
-                            .add(comment)
+                            .add(commentData)
                             .addOnSuccessListener(documentReference -> {
+                                boolean wasReply = selectedReplyComment != null;
                                 etComment.setText("");
-                                Toast.makeText(getContext(), "Comment posted", Toast.LENGTH_SHORT).show();
+                                clearReplyMode();
+
+                                if (wasReply) {
+                                    Toast.makeText(getContext(), "Reply posted", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(getContext(), "Comment posted", Toast.LENGTH_SHORT).show();
+                                }
                             })
                             .addOnFailureListener(e ->
                                     Toast.makeText(getContext(), "Failed to post comment", Toast.LENGTH_SHORT).show());
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(), "Failed to get user info", Toast.LENGTH_SHORT).show());
+    }
+
+    private void clearReplyMode() {
+        selectedReplyComment = null;
+        etComment.setHint("Write a comment");
+        etComment.setError(null);
     }
 
     private void loadEventDetails(TextView tvEventName, TextView tvDescription,
@@ -369,11 +432,13 @@ public class EntrantEventDetailsFragment extends Fragment {
                     tvEventName.setText(eventName);
                     tvDescription.setText(doc.getString("description"));
                     tvStatusTag.setText(doc.getString("status"));
+
                     if (doc.getString("status") != null) {
                         eventStatus = doc.getString("status");
                     } else {
                         eventStatus = "Closed";
                     }
+
                     tvLocation.setText(doc.getString("location"));
                     tvOrganizer.setText(doc.getString("organizer"));
 
@@ -574,7 +639,7 @@ public class EntrantEventDetailsFragment extends Fragment {
                                         writeWaitlistEntry(btnJoin, entrantName, latitude, longitude, null))
                                 .addOnFailureListener(e ->
                                         writeWaitlistEntry(btnJoin, entrantName, latitude, longitude,
-                                                "Joined but failed to update profile" + e.getMessage()))
+                                                "Joined but failed to update profile: " + e.getMessage()))
                 )
                 .addOnFailureListener(e -> {
                     btnJoin.setEnabled(true);
@@ -637,10 +702,8 @@ public class EntrantEventDetailsFragment extends Fragment {
                         db.collection("users")
                                 .document(entrantId)
                                 .update("registeredEventIds", FieldValue.arrayRemove(eventId))
-                                .addOnSuccessListener(unused2 -> {
-                                    removeWaitlistEntry(btnJoin, "Left waitlist successfully");
-                                    Toast.makeText(getContext(), "Left waitlist successfully", Toast.LENGTH_SHORT).show();
-                                })
+                                .addOnSuccessListener(unused2 ->
+                                        removeWaitlistEntry(btnJoin, "Left waitlist successfully"))
                                 .addOnFailureListener(e ->
                                         removeWaitlistEntry(btnJoin,
                                                 "Left waitlist, but failed to update profile: " + e.getMessage()))
@@ -667,7 +730,7 @@ public class EntrantEventDetailsFragment extends Fragment {
                 setJoinWaitlistStyle(btnJoin);
                 btnJoin.setEnabled(true);
                 Toast.makeText(getContext(),
-                        baseMessage + "waitlist map data cleanup failed",
+                        baseMessage + " waitlist map data cleanup failed",
                         Toast.LENGTH_SHORT).show();
             }
         });

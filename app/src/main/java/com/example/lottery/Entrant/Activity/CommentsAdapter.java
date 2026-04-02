@@ -1,6 +1,5 @@
 package com.example.lottery.Entrant.Activity;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,11 +16,17 @@ import java.util.Locale;
 
 public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.CommentViewHolder> {
 
+    public interface OnReplyClickListener {
+        void onReplyClick(Comment comment);
+    }
+
     private final List<Comment> commentList;
     private String organizerId;
+    private final OnReplyClickListener replyClickListener;
 
-    public CommentsAdapter(List<Comment> commentList) {
+    public CommentsAdapter(List<Comment> commentList, OnReplyClickListener replyClickListener) {
         this.commentList = commentList;
+        this.replyClickListener = replyClickListener;
     }
 
     public void setOrganizerId(String organizerId) {
@@ -41,17 +46,11 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
     public void onBindViewHolder(@NonNull CommentViewHolder holder, int position) {
         Comment comment = commentList.get(position);
 
-        Log.d("ENTRANT_DEPTH_CHECK",
-                "text=" + comment.getText()
-                        + ", depth=" + comment.getDepth()
-                        + ", parent=" + comment.getParentCommentId());
-
         holder.tvCommentUser.setText(comment.getUserName());
         holder.tvCommentText.setText(comment.getText());
 
         if (comment.isReply()) {
             holder.tvReplyInfo.setVisibility(View.VISIBLE);
-
             String replyToName = comment.getReplyToAuthorName();
             if (replyToName == null || replyToName.trim().isEmpty()) {
                 holder.tvReplyInfo.setText("Reply");
@@ -83,6 +82,12 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
                 dpToPx(holder.itemView, 12),
                 dpToPx(holder.itemView, 12)
         );
+
+        holder.btnReply.setOnClickListener(v -> {
+            if (replyClickListener != null) {
+                replyClickListener.onReplyClick(comment);
+            }
+        });
     }
 
     @Override
@@ -97,7 +102,12 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
 
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         View commentContentContainer;
-        TextView tvCommentUser, tvCommentText, tvCommentTime, tvOrganizerBadge, tvReplyInfo;
+        TextView tvCommentUser;
+        TextView tvCommentText;
+        TextView tvCommentTime;
+        TextView tvOrganizerBadge;
+        TextView tvReplyInfo;
+        TextView btnReply;
 
         public CommentViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -107,6 +117,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
             tvCommentTime = itemView.findViewById(R.id.tvCommentTime);
             tvOrganizerBadge = itemView.findViewById(R.id.tvOrganizerBadge);
             tvReplyInfo = itemView.findViewById(R.id.tvReplyInfo);
+            btnReply = itemView.findViewById(R.id.btnReply);
         }
     }
 }
