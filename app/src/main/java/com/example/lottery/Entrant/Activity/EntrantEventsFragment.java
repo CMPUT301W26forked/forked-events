@@ -5,6 +5,7 @@ import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,7 @@ import java.util.Locale;
 
 public class EntrantEventsFragment extends Fragment {
 
+    private static final String TAG = "EntrantEventsFragment";
     private RecyclerView rvEvents;
     private EditText searchBar;
     private ImageView ivFilter;
@@ -126,7 +128,14 @@ public class EntrantEventsFragment extends Fragment {
                         Event event = doc.toObject(Event.class);
                         if (event != null) {
                             event.setEventId(doc.getId());
-                            allEvents.add(event);
+                            
+                            // Log the event name and isPrivate status for debugging
+                            Log.d(TAG, "Event: " + event.getTitle() + " | isPrivate: " + event.isPrivate());
+                            
+                            // Only add to allEvents if it is NOT private
+                            if (!event.isPrivate()) {
+                                allEvents.add(event);
+                            }
                         }
                     }
 

@@ -25,6 +25,17 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Lottery">
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.example.lottery.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!--
         <meta-data
             android:name="com.google.android.geo.API_KEY"

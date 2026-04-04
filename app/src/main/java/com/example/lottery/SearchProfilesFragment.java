@@ -3,10 +3,12 @@ package com.example.lottery;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,17 +17,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lottery.Entrant.Model.EntrantProfile;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * fragment for searching and displaying user profiles
+ * fragment for searching and displaying user profiles to invite
  */
 public class SearchProfilesFragment extends Fragment {
 
+    private String eventId;
+    private String eventName;
     private RecyclerView recyclerView;
     private ProfileAdapter adapter;
     private List<EntrantProfile> profileList;
@@ -33,10 +40,24 @@ public class SearchProfilesFragment extends Fragment {
     private FirebaseFirestore db;
     private EditText etSearch;
 
+    public static SearchProfilesFragment newInstance(String eventId, String eventName) {
+        SearchProfilesFragment fragment = new SearchProfilesFragment();
+        Bundle args = new Bundle();
+        args.putString("event_id", eventId);
+        args.putString("event_name", eventName);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_search_profiles, container, false);
+
+        if (getArguments() != null) {
+            eventId = getArguments().getString("event_id");
+            eventName = getArguments().getString("event_name");
+        }
 
         db = FirebaseFirestore.getInstance();
         profileList = new ArrayList<>();
@@ -47,7 +68,7 @@ public class SearchProfilesFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         adapter = new ProfileAdapter(filteredList, profile -> {
-            // handle profile click - navigate to details if needed
+            inviteUser(profile);
         });
         recyclerView.setAdapter(adapter);
 
@@ -61,6 +82,39 @@ public class SearchProfilesFragment extends Fragment {
         fetchAllProfiles();
 
         return view;
+    }
+
+    private void inviteUser(EntrantProfile profile) {
+        if (eventId == null) {
+            Toast.makeText(getContext(), "Error: Event ID missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 1. Add user to pendingEntrantIds in the event document
+        db.collection("events").document(eventId)
+                .update("pendingEntrantIds", FieldValue.arrayUnion(profile.getId()))
+                .addOnSuccessListener(aVoid -> {
+                    // 2. Create a notification for the user
+                    sendInvitationNotification(profile);
+                    Toast.makeText(getContext(), "Invited " + profile.getName(), Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("Invite", "Failed to invite user", e);
+                    Toast.makeText(getContext(), "Failed to invite user", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void sendInvitationNotification(EntrantProfile profile) {
+        Map<String, Object> notification = new HashMap<>();
+        notification.put("userId", profile.getId());
+        notification.put("eventId", eventId);
+        notification.put("title", "Event Invitation");
+        notification.put("message", "You have been invited to join the event: " + (eventName != null ? eventName : "New Event"));
+        notification.put("type", "invitation");
+        notification.put("timestamp", com.google.firebase.Timestamp.now());
+        notification.put("isRead", false);
+
+        db.collection("notifications").add(notification);
     }
 
     /**

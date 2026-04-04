@@ -48,7 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:backgroundTint="#212121"
-            android:text="View"
+            android:text="Invite"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="12sp"

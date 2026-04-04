@@ -1,8 +1,17 @@
 package com.example.lottery;
 
 import android.app.AlertDialog;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
 import com.example.lottery.Entrant.Activity.ViewListsFragment;
@@ -19,6 +29,12 @@ import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.PosterStorageService;
 import com.example.lottery.organizer.RepoCallback;
 import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
 
 /**
  * Organizer event management page
@@ -73,26 +89,98 @@ public class EventManagementFragment extends Fragment {
                     .commit();
         });
 
-        // btn jump to comment/info view
-        View btnToInfo = view.findViewById(R.id.btnToInfo);
-        btnToInfo.setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, ViewCommentsFragment.newInstance(eventId, eventName))
-                    .addToBackStack(null)
-                    .commit();
-        });
+        // Export CSV
+        View btnExportCsv = view.findViewById(R.id.btnExportCsv);
+        if (btnExportCsv != null) {
+            btnExportCsv.setOnClickListener(v -> exportEntrantsToCsv());
+        }
 
-        // btn jump to waitlis map
-        View btnWaitListMap = view.findViewById(R.id.btnWaitListMap);
-        btnWaitListMap.setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, WaitlistMapFragment.newInstance(eventId, eventName))
-                    .addToBackStack(null)
-                    .commit();
-        });
-
+        // Invite Entrants
+        View btnInvite = view.findViewById(R.id.btnInvite);
+        if (btnInvite != null) {
+            btnInvite.setOnClickListener(v -> {
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, SearchProfilesFragment.newInstance(eventId, eventName))
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
 
         return view;
+    }
+
+    private void exportEntrantsToCsv() {
+        repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot doc) {
+                if (doc != null && doc.exists()) {
+                    List<String> waitlisted = (List<String>) doc.get("waitlistedEntrantIds");
+                    List<String> registered = (List<String>) doc.get("registeredEntrantIds");
+                    List<String> pending = (List<String>) doc.get("pendingEntrantIds");
+                    List<String> cancelled = (List<String>) doc.get("cancelledEntrantIds");
+
+                    StringBuilder csvContent = new StringBuilder();
+                    csvContent.append("List Type,Entrant ID\n");
+
+                    appendIdsToCsv(csvContent, "Waitlisted", waitlisted);
+                    appendIdsToCsv(csvContent, "Registered", registered);
+                    appendIdsToCsv(csvContent, "Pending", pending);
+                    appendIdsToCsv(csvContent, "Cancelled", cancelled);
+
+                    saveAndShareCsv(csvContent.toString());
+                }
+            }
+
+            @Override
+            public void onError(Exception e) {
+                Toast.makeText(requireContext(), "Failed to fetch event data", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void appendIdsToCsv(StringBuilder sb, String type, List<String> ids) {
+        if (ids != null) {
+            for (String id : ids) {
+                sb.append(type).append(",").append(id).append("\n");
+            }
+        }
+    }
+
+    private void saveAndShareCsv(String content) {
+        String fileName = "entrants_" + eventId + ".csv";
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
+                values.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
+                values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+
+                ContentResolver resolver = requireContext().getContentResolver();
+                Uri uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+
+                if (uri != null) {
+                    try (OutputStream os = resolver.openOutputStream(uri)) {
+                        if (os != null) {
+                            os.write(content.getBytes());
+                            Toast.makeText(requireContext(), "CSV saved to Downloads folder", Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+            } else {
+
+                File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                if (!downloadDir.exists()) downloadDir.mkdirs();
+                File file = new File(downloadDir, fileName);
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    fos.write(content.getBytes());
+                    Toast.makeText(requireContext(), "CSV saved to Downloads", Toast.LENGTH_LONG).show();
+                }
+            }
+        } catch (IOException e) {
+            Log.e("CSV_EXPORT", "Error saving CSV", e);
+            Toast.makeText(requireContext(), "Download failed", Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**

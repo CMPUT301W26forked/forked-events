@@ -45,6 +45,7 @@ public class EventsFragment extends Fragment {
     }
 
     private void fetchEventsFromFirestore() {
+        // Simple fetch all and filter manually to handle nulls and booleans correctly
         db.collection("events")
                 .get()
                 .addOnCompleteListener(task -> {
@@ -53,7 +54,12 @@ public class EventsFragment extends Fragment {
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             Event event = document.toObject(Event.class);
                             event.setEventId(document.getId());
-                            eventList.add(event);
+                            
+                            // Only add if isPrivate is NOT true
+                            Log.d(TAG, "Event: " + event.getTitle() + " isPrivate: " + event.isPrivate());
+                            if (!event.isPrivate()) {
+                                eventList.add(event);
+                            }
                         }
                         adapter.notifyDataSetChanged();
                     } else {

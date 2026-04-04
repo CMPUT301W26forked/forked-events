@@ -2,6 +2,7 @@ package com.example.lottery;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Exclude;
+import com.google.firebase.firestore.PropertyName;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -328,6 +329,7 @@ public class Event {
      * gets whether event is private
      * @return true if private
      */
+    @PropertyName("isPrivate")
     public boolean isPrivate() {
         return isPrivate;
     }
@@ -336,6 +338,7 @@ public class Event {
      * sets whether event is private
      * @param isPrivate privacy status
      */
+    @PropertyName("isPrivate")
     public void setPrivate(boolean isPrivate) {
         this.isPrivate = isPrivate;
     }
