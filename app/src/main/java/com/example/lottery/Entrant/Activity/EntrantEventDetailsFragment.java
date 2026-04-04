@@ -623,7 +623,7 @@ public class EntrantEventDetailsFragment extends Fragment {
 
     private void finalizeWaitlistJoin(MaterialButton btnJoin, String entrantName,
                                       Double latitude, Double longitude) {
-        entrantService.signUpForEvent(entrantName, eventId);
+        entrantService.signUpForEvent(entrantId, eventId);
 
         db.collection("events")
                 .document(eventId)
