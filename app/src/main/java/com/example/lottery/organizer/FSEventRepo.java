@@ -153,7 +153,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", message);
             notification.put("type", "SELECTED");
-            notification.put("timestamp", com.google.firebase.Timestamp.now());
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
@@ -231,7 +231,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("message", message);
             notification.put("type", "MESSAGE");
             notification.put("audience", audience);
-            notification.put("timestamp", createdAt);
+            notification.put("createdAt", createdAt);
             notification.put("isRead", false);
             db.collection("users")
                     .document(id)
@@ -298,7 +298,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", "Unfortunately, you were not selected in the lottery for " + eventName + "." );
             notification.put("type", "NOT_SELECTED");
-            notification.put("timestamp", com.google.firebase.Timestamp.now());
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
@@ -330,7 +330,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", "You have been invited to join waiting list for the private event: " + eventName + ".");
             notification.put("type", "WAITLIST_INVITE");
-            notification.put("timestamp", com.google.firebase.Timestamp.now());
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
@@ -362,7 +362,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("entrantId", entrantId);
             notification.put("message", "You have been invited to be a co-organizer for the event: " + eventName + ".");
             notification.put("type", "CO_ORGANIZER_INVITE");
-            notification.put("timestamp", com.google.firebase.Timestamp.now());
+            notification.put("createdAt", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);
 
             db.collection("users")
