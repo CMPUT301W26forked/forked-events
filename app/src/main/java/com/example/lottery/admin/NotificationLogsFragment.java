@@ -57,6 +57,9 @@ public class NotificationLogsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * load notification logs
+     */
     public void loadLogs() {
         FirebaseFirestore.getInstance()
                 .collectionGroup("notification")
@@ -138,6 +141,11 @@ public class NotificationLogsFragment extends Fragment {
                 });
     }
 
+    /**
+     * check if sent by organizer by type
+     * @param type
+     * @return
+     */
     private boolean isOrganizerSentType(String type) {
         return "MESSAGE".equalsIgnoreCase(type)
                 || "SELECTED".equalsIgnoreCase(type)
@@ -146,6 +154,9 @@ public class NotificationLogsFragment extends Fragment {
                 || "CO_ORGANIZER_INVITE".equalsIgnoreCase(type);
     }
 
+    /**
+     * temporary group for sorting
+     */
     private static class TempLogGroup {
         String eventName;
         String eventId;

@@ -36,6 +36,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
+/**
+ * fragment for event management for organizer
+ */
 public class EventManagementFragment extends Fragment {
 
     private String eventId = "test_event";

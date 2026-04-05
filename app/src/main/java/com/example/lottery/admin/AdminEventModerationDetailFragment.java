@@ -53,6 +53,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * event detail for admin moderation
+ */
 public class AdminEventModerationDetailFragment extends Fragment {
     private String eventId;
     private String eventName;
