@@ -184,9 +184,11 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/cardInvite"
                 android:layout_width="0dp"
                 android:layout_height="160dp"
                 android:layout_columnWeight="1"
+                android:visibility="gone"
                 app:cardBackgroundColor="#E0E0E0"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="2dp">

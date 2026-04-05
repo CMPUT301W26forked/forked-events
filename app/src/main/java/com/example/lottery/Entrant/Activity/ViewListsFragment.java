@@ -16,6 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lottery.R;
+import com.example.lottery.organizer.FSEventRepo;
+import com.example.lottery.organizer.RepoCallback;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -23,8 +25,12 @@ import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.android.material.button.MaterialButton;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ViewListsFragment extends Fragment {
 
@@ -33,7 +39,9 @@ public class ViewListsFragment extends Fragment {
     private RecyclerView rvEntrants;
     private EntrantAdapter adapter;
     private List<EntrantInfo> entrantList = new ArrayList<>();
+    private Set<String> replacedEntrantIds = new HashSet<>();
     private FirebaseFirestore db;
+    private FSEventRepo repo;
     private TextView tvListTitle, btnWaitlist, btnPending, btnFinalList, btnCancelled;
 
     /**
@@ -64,6 +72,7 @@ public class ViewListsFragment extends Fragment {
         }
 
         db = FirebaseFirestore.getInstance();
+        repo = new FSEventRepo();
 
         tvListTitle = view.findViewById(R.id.tvListTitle);
         btnWaitlist = view.findViewById(R.id.btnWaitlist);
@@ -96,7 +105,8 @@ public class ViewListsFragment extends Fragment {
         tvListTitle.setText(eventName + " " + titleSuffix);
 
         boolean isPending = "pendingEntrantIds".equals(arrayField);
-        adapter = new EntrantAdapter(entrantList, isPending);
+        boolean isCancelled = "cancelledEntrantIds".equals(arrayField);
+        adapter = new EntrantAdapter(entrantList, isPending, isCancelled);
         rvEntrants.setAdapter(adapter);
 
         db.collection("events").document(eventId).get().addOnSuccessListener(eventDoc -> {
@@ -149,6 +159,45 @@ public class ViewListsFragment extends Fragment {
         );
     }
 
+    private void replaceCancelledEntrant(EntrantInfo entrant, int position) {
+        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+            if (!doc.exists()) return;
+            List<String> waitlist = (List<String>) doc.get("waitlistedEntrantIds");
+            if (waitlist == null || waitlist.isEmpty()) {
+                Toast.makeText(getContext(), "No one left on the waitlist to invite.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Pick a random person from the waitlist
+            List<String> pool = new ArrayList<>(waitlist);
+            Collections.shuffle(pool, new SecureRandom());
+            String newEntrantId = pool.get(0);
+
+            // Move from waitlist to pending
+            db.collection("events").document(eventId).update(
+                    "waitlistedEntrantIds", FieldValue.arrayRemove(newEntrantId),
+                    "pendingEntrantIds", FieldValue.arrayUnion(newEntrantId),
+                    "waitlistCount", FieldValue.increment(-1)
+            ).addOnSuccessListener(v -> {
+                // Notify the new person
+                repo.createNotification(eventId, newEntrantId, eventName, "You have been selected for the event from the waitlist!", new RepoCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        Toast.makeText(getContext(), "Invited a new person from waitlist.", Toast.LENGTH_SHORT).show();
+                        // Mark this person as replaced so the button disappears
+                        replacedEntrantIds.add(entrant.id);
+                        adapter.notifyItemChanged(position);
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+                        Log.e("Replace", "Failed to notify", e);
+                    }
+                });
+            });
+        });
+    }
+
     /**
      * Simple model class representing entrant information.
      */
@@ -171,13 +220,15 @@ public class ViewListsFragment extends Fragment {
     private class EntrantAdapter extends RecyclerView.Adapter<EntrantAdapter.ViewHolder> {
         private List<EntrantInfo> entrants;
         private boolean showCancelButton;
+        private boolean showReplaceButton;
 
         /**
          * Initializes adapter with entrant data and UI behavior flag.
          */
-        EntrantAdapter(List<EntrantInfo> entrants, boolean showCancelButton) {
+        EntrantAdapter(List<EntrantInfo> entrants, boolean showCancelButton, boolean showReplaceButton) {
             this.entrants = entrants;
             this.showCancelButton = showCancelButton;
+            this.showReplaceButton = showReplaceButton;
         }
 
         /**
@@ -207,6 +258,17 @@ public class ViewListsFragment extends Fragment {
                             .setTitle("Remove from Pending")
                             .setMessage("Remove " + entrant.name + " from pending entrants?")
                             .setPositiveButton("Remove", (dialog, which) -> cancelEntrant(entrant, position))
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                });
+            } else if (showReplaceButton && !replacedEntrantIds.contains(entrant.id)) {
+                holder.btnView.setVisibility(View.VISIBLE);
+                holder.btnView.setText("Replace");
+                holder.btnView.setOnClickListener(v -> {
+                    new AlertDialog.Builder(v.getContext())
+                            .setTitle("Replace Entrant")
+                            .setMessage("Invite someone from the waitlist to replace " + entrant.name + "?")
+                            .setPositiveButton("Replace", (dialog, which) -> replaceCancelledEntrant(entrant, position))
                             .setNegativeButton("Cancel", null)
                             .show();
                 });

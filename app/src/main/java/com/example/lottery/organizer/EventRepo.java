@@ -93,6 +93,16 @@ public interface EventRepo {
     void createNotification(String eventId, String entrantId, String eventName, String message, RepoCallback<Void> cb);
 
     /**
+     * creates a notification for an entrant who was not selected in the lottery
+     *
+     * @param eventId   unique event id
+     * @param entrantId unique user id
+     * @param eventName name of the event
+     * @param cb        callback for success or error
+     */
+    void createLossNotification(String eventId, String entrantId, String eventName, RepoCallback<Void> cb);
+
+    /**
      * retrieves a list of entrant ids on the pending (invited) list
      *
      * @param eventId unique event id
@@ -138,5 +148,3 @@ public interface EventRepo {
      */
     void deleteEvent(String eventId, RepoCallback<Void> cb);
 }
-
-

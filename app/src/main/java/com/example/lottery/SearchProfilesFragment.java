@@ -17,14 +17,17 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.lottery.Entrant.Model.EntrantProfile;
+import com.example.lottery.organizer.FSEventRepo;
+import com.example.lottery.organizer.RepoCallback;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * fragment for searching and displaying user profiles to invite
@@ -37,7 +40,9 @@ public class SearchProfilesFragment extends Fragment {
     private ProfileAdapter adapter;
     private List<EntrantProfile> profileList;
     private List<EntrantProfile> filteredList;
+    private Set<String> allowedIds;
     private FirebaseFirestore db;
+    private FSEventRepo repo;
     private EditText etSearch;
 
     public static SearchProfilesFragment newInstance(String eventId, String eventName) {
@@ -60,8 +65,10 @@ public class SearchProfilesFragment extends Fragment {
         }
 
         db = FirebaseFirestore.getInstance();
+        repo = new FSEventRepo();
         profileList = new ArrayList<>();
         filteredList = new ArrayList<>();
+        allowedIds = new HashSet<>();
 
         etSearch = view.findViewById(R.id.etSearch);
         recyclerView = view.findViewById(R.id.rvProfiles);
@@ -90,31 +97,33 @@ public class SearchProfilesFragment extends Fragment {
             return;
         }
 
-        // 1. Add user to pendingEntrantIds in the event document
+        // 1. Update lists: add to pending, remove from cancelled (if they were there)
         db.collection("events").document(eventId)
-                .update("pendingEntrantIds", FieldValue.arrayUnion(profile.getId()))
+                .update(
+                        "pendingEntrantIds", FieldValue.arrayUnion(profile.getId()),
+                        "cancelledEntrantIds", FieldValue.arrayRemove(profile.getId())
+                )
                 .addOnSuccessListener(aVoid -> {
-                    // 2. Create a notification for the user
-                    sendInvitationNotification(profile);
-                    Toast.makeText(getContext(), "Invited " + profile.getName(), Toast.LENGTH_SHORT).show();
+                    // 2. Create a notification for the user using the repository
+                    repo.createNotification(eventId, profile.getId(), eventName,
+                        "You have been invited to join the private event: " + (eventName != null ? eventName : "New Event"),
+                        new RepoCallback<Void>() {
+                            @Override
+                            public void onSuccess(Void result) {
+                                Toast.makeText(getContext(), "Invited " + profile.getName(), Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                Log.e("Invite", "Failed to send notification", e);
+                                Toast.makeText(getContext(), "User invited, but notification failed", Toast.LENGTH_SHORT).show();
+                            }
+                        });
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Invite", "Failed to invite user", e);
                     Toast.makeText(getContext(), "Failed to invite user", Toast.LENGTH_SHORT).show();
                 });
-    }
-
-    private void sendInvitationNotification(EntrantProfile profile) {
-        Map<String, Object> notification = new HashMap<>();
-        notification.put("userId", profile.getId());
-        notification.put("eventId", eventId);
-        notification.put("title", "Event Invitation");
-        notification.put("message", "You have been invited to join the event: " + (eventName != null ? eventName : "New Event"));
-        notification.put("type", "invitation");
-        notification.put("timestamp", com.google.firebase.Timestamp.now());
-        notification.put("isRead", false);
-
-        db.collection("notifications").add(notification);
     }
 
     /**
@@ -136,20 +145,41 @@ public class SearchProfilesFragment extends Fragment {
     }
 
     /**
-     * fetches all user profiles from firestore
+     * fetches relevant user profiles from firestore
      */
     private void fetchAllProfiles() {
-        db.collection("users")
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    profileList.clear();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        EntrantProfile profile = doc.toObject(EntrantProfile.class);
-                        profile.setId(doc.getId());
-                        profileList.add(profile);
-                    }
-                    filterProfiles(etSearch.getText().toString());
-                });
+        if (eventId == null) return;
+
+        // First fetch the event to see who is allowed to be invited
+        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+            allowedIds.clear();
+            if (doc.exists()) {
+                List<String> pending = (List<String>) doc.get("pendingEntrantIds");
+                List<String> registered = (List<String>) doc.get("registeredEntrantIds");
+                List<String> cancelled = (List<String>) doc.get("cancelledEntrantIds");
+
+                if (pending != null) allowedIds.addAll(pending);
+                if (registered != null) allowedIds.addAll(registered);
+                if (cancelled != null) allowedIds.addAll(cancelled);
+            }
+
+            // Then fetch all users and filter
+            db.collection("users")
+                    .get()
+                    .addOnSuccessListener(queryDocumentSnapshots -> {
+                        profileList.clear();
+                        for (QueryDocumentSnapshot userDoc : queryDocumentSnapshots) {
+                            if (allowedIds.contains(userDoc.getId())) {
+                                EntrantProfile profile = userDoc.toObject(EntrantProfile.class);
+                                if (profile != null) {
+                                    profile.setId(userDoc.getId());
+                                    profileList.add(profile);
+                                }
+                            }
+                        }
+                        filterProfiles(etSearch.getText().toString());
+                    });
+        }).addOnFailureListener(e -> Log.e("SearchProfiles", "Error fetching event", e));
     }
 
     /**

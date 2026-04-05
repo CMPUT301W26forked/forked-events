@@ -36,10 +36,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
 
-/**
- * Organizer event management page
- * Allows organizer sampling entrants with status WAITING (notify if selected)
- */
 public class EventManagementFragment extends Fragment {
 
     private String eventId = "test_event";
@@ -60,9 +56,8 @@ public class EventManagementFragment extends Fragment {
             eventId = getArguments().getString("event_id", "test_event");
             eventName = getArguments().getString("event_name", "Event");
         }
-        loadWaitinglistInfo();
+        loadWaitinglistInfo(view);
 
-        // Back button
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
             if (isAdded()) {
                 getParentFragmentManager().popBackStack();
@@ -81,14 +76,15 @@ public class EventManagementFragment extends Fragment {
         });
 
         View btnWaitListMap = view.findViewById(R.id.btnWaitListMap);
-        btnWaitListMap.setOnClickListener(v -> {
-            getParentFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, WaitlistMapFragment.newInstance(eventId, eventName))
-                    .addToBackStack(null)
-                    .commit();
-        });
+        if (btnWaitListMap != null) {
+            btnWaitListMap.setOnClickListener(v -> {
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, WaitlistMapFragment.newInstance(eventId, eventName))
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
 
-        // btn jump to message/notification
         View btnToMessage = view.findViewById(R.id.btnToMessage);
         btnToMessage.setOnClickListener(v -> {
             getParentFragmentManager().beginTransaction()
@@ -97,13 +93,11 @@ public class EventManagementFragment extends Fragment {
                     .commit();
         });
 
-        // Export CSV
         View btnExportCsv = view.findViewById(R.id.btnExportCsv);
         if (btnExportCsv != null) {
             btnExportCsv.setOnClickListener(v -> exportEntrantsToCsv());
         }
 
-        // Invite Entrants
         View btnInvite = view.findViewById(R.id.btnInvite);
         if (btnInvite != null) {
             btnInvite.setOnClickListener(v -> {
@@ -158,7 +152,6 @@ public class EventManagementFragment extends Fragment {
         String fileName = "entrants_" + eventId + ".csv";
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
                 values.put(MediaStore.MediaColumns.MIME_TYPE, "text/csv");
@@ -176,7 +169,6 @@ public class EventManagementFragment extends Fragment {
                     }
                 }
             } else {
-
                 File downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                 if (!downloadDir.exists()) downloadDir.mkdirs();
                 File file = new File(downloadDir, fileName);
@@ -191,9 +183,6 @@ public class EventManagementFragment extends Fragment {
         }
     }
 
-    /**
-     * Let organizer inputs the number of entrants to be selected
-     */
     private void showSampleSizeDiaglog() {
         EditText input = new EditText(requireContext());
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -226,10 +215,7 @@ public class EventManagementFragment extends Fragment {
                 .show();
     }
 
-    /**
-     * loading waitlist info for hint
-     */
-    private void loadWaitinglistInfo() {
+    private void loadWaitinglistInfo(View view) {
         repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
             @Override
             public void onSuccess(DocumentSnapshot doc) {
@@ -238,6 +224,12 @@ public class EventManagementFragment extends Fragment {
                     Long limit = doc.getLong("waitListLimit");
                     waitlistCount = count != null ? count : 0;
                     waitlistLimit = limit != null ? limit : 0;
+
+                    Boolean isPrivate = doc.getBoolean("isPrivate");
+                    View cardInvite = view.findViewById(R.id.cardInvite);
+                    if (cardInvite != null) {
+                        cardInvite.setVisibility((isPrivate != null && isPrivate) ? View.VISIBLE : View.GONE);
+                    }
                 }
             }
 
