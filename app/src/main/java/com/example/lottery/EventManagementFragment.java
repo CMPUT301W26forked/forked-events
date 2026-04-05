@@ -80,6 +80,14 @@ public class EventManagementFragment extends Fragment {
                     .commit();
         });
 
+        View btnWaitListMap = view.findViewById(R.id.btnWaitListMap);
+        btnWaitListMap.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, WaitlistMapFragment.newInstance(eventId, eventName))
+                    .addToBackStack(null)
+                    .commit();
+        });
+
         // btn jump to message/notification
         View btnToMessage = view.findViewById(R.id.btnToMessage);
         btnToMessage.setOnClickListener(v -> {
