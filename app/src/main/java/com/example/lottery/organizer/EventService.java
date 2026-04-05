@@ -156,32 +156,12 @@ public class EventService {
                     return;
                 }
 
-                final int totalToProcess = ids.size();
                 final int[] done = {0};
                 final boolean[] failed = {false};
 
-                // Helper to track progress
-                RepoCallback<Void> progressCb = new RepoCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        if (failed[0]) return;
-                        done[0]++;
-                        if (done[0] == totalToProcess) {
-                            cb.onSuccess(null);
-                        }
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        if (failed[0]) return;
-                        failed[0] = true;
-                        cb.onError(e);
-                    }
-                };
-
-                // Notify selected entrants
                 for (int i = 0; i < count; i ++) {
                     String entrantId = ids.get(i);
+
                     repo.markEntrantSelected(eventId, entrantId, new RepoCallback<Void>() {
                         @Override
                         public void onSuccess(Void result) {
@@ -190,20 +170,47 @@ public class EventService {
                                     entrantId,
                                     eventName,
                                     "You have been selected for the event",
-                                    progressCb);
+                                    new RepoCallback<Void>() {
+                                        @Override
+                                        public void onSuccess(Void result) {
+                                            if (failed[0]) return;
+                                            done[0]++;
+                                            if (done[0] == count) {
+                                                cb.onSuccess(null);
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onError(Exception e) {
+                                            if (failed[0]) return;
+                                            failed[0] = true;
+                                            cb.onError(e);
+                                        }
+                                    });
                         }
 
                         @Override
                         public void onError(Exception e) {
-                            progressCb.onError(e);
+                            if (failed[0]) return;
+                            failed[0] = true;
+                            cb.onError(e);
                         }
                     });
                 }
-
-                // Notify unselected entrants
                 for (int i = count; i < ids.size(); i++) {
-                    String entrantId = ids.get(i);
-                    repo.createLossNotification(eventId, entrantId, eventName, progressCb);
+                    String loserId = ids.get(i);
+                    repo.createLossNotification(
+                            eventId,
+                            loserId,
+                            eventName,
+                            new RepoCallback<Void>() {
+                                @Override
+                                public void onSuccess(Void result) {}
+
+                                @Override
+                                public void onError(Exception e) {}
+                            }
+                    );
                 }
             }
 
