@@ -145,10 +145,17 @@ public class EventBuilderFragment extends Fragment {
         return view;
     }
 
+    /**
+     * cb interface
+     */
     private interface MillisCallback {
         void onPicked(long millis);
     }
 
+    /**
+     * date time picker
+     * @param cb
+     */
     private void pickDateTime(MillisCallback cb) {
         Calendar cal = Calendar.getInstance();
         new DatePickerDialog(requireContext(), (view, year, month, day) -> {
@@ -165,6 +172,9 @@ public class EventBuilderFragment extends Fragment {
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
     }
 
+    /**
+     * pick period
+     */
     private void pickRegistrationPeriod() {
         pickDateTime(startMillis -> pickDateTime(endMillis -> {
             startTimestamp = new Timestamp(new Date(startMillis));
@@ -173,6 +183,10 @@ public class EventBuilderFragment extends Fragment {
         }));
     }
 
+    /**
+     * upload poster
+     * @param localUri
+     */
     private void uploadPoster(Uri localUri) {
         service.uploadPoster(eventId, localUri, new RepoCallback<String>() {
             @Override
@@ -271,6 +285,9 @@ public class EventBuilderFragment extends Fragment {
         });
     }
 
+    /**
+     * render
+     */
     private void loadAndRender() {
         repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
             @Override
