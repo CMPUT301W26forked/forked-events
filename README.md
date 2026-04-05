@@ -1,4 +1,5 @@
 # How to use API
+Ignore this unless you want to enable Places AutoComplete and Waitlist Map function 
 1. Go to Google Cloud -> create API for Maps SDK for Android | Places API (New)
 
 2. Go to your local.properties -> Add two lines: 
@@ -11,6 +12,10 @@ MAPS_API_KEY=YOUR_APIKEY
 <meta-data
 android:name="com.google.android.geo.API_KEY"
 android:value="${MAPS_API_KEY}" />
+```
+4. Go to EventBuilderFragment.java -> replace placeholder with "BuildConfig.PLACES_API_KEY":
+```
+String apikey = "YOUR_APIKEY"; // Replace with BuildConfig.PLACES_API_KEY;
 ```
 ---
 # For detail: 
