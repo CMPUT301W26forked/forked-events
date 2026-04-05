@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import com.example.lottery.Event;
 import com.example.lottery.R;
+import com.example.lottery.admin.AdminActivity;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
@@ -46,6 +47,7 @@ public class ProfileFragment extends Fragment {
 
     private TextView tvProfileName, tvProfileEmail, tvProfilePhone;
     private Button btnEditDetails;
+    private Button btnAdminPanel;
     private Button btnLogout;
     private Button btnDeleteProfile;
     private Switch switchNotifications;
@@ -87,6 +89,7 @@ public class ProfileFragment extends Fragment {
         tvProfileEmail = view.findViewById(R.id.tvProfileEmail);
         tvProfilePhone = view.findViewById(R.id.tvProfilePhone);
         btnEditDetails = view.findViewById(R.id.btnEditDetails);
+        btnAdminPanel = view.findViewById(R.id.btnAdminPanel);
         btnLogout = view.findViewById(R.id.btnLogout);
         btnDeleteProfile = view.findViewById(R.id.btnDeleteProfile);
         switchNotifications = view.findViewById(R.id.switchNotifications);
@@ -98,6 +101,10 @@ public class ProfileFragment extends Fragment {
 
         btnLogout.setOnClickListener(v -> logoutUser());
         btnDeleteProfile.setOnClickListener(v -> showDeleteProfileDialog());
+        btnAdminPanel.setOnClickListener(v -> {
+            Intent intent = new Intent(requireContext(), AdminActivity.class);
+            startActivity(intent);
+        });
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
             requireActivity().getSupportFragmentManager()
@@ -330,6 +337,13 @@ public class ProfileFragment extends Fragment {
                         boolean isEnabled = (notifEnabled == null) || notifEnabled; // default true
                         switchNotifications.setChecked(isEnabled);
 
+                        String role = documentSnapshot.getString("role");
+                        if ("admin".equals(role)) {
+                            btnAdminPanel.setVisibility(View.VISIBLE);
+                        } else {
+                            btnAdminPanel.setVisibility(View.GONE);
+                        }
+
                         switchNotifications.setOnCheckedChangeListener((buttonView, isChecked) -> {
                             db.collection("users")
                                     .document(userId)
@@ -370,6 +384,7 @@ public class ProfileFragment extends Fragment {
                         currentName = "";
                         currentPhone = "";
                         currentEmail = isGuest ? "" : safeString(currentUser.getEmail());
+                        btnAdminPanel.setVisibility(View.GONE);
                     }
 
                     if (TextUtils.isEmpty(currentName)) currentName = "No name";

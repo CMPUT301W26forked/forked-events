@@ -48,11 +48,7 @@ public class LoginActivity extends AppCompatActivity {
 
         // Check if user is already logged in
         if (mAuth.getCurrentUser() != null) {
-            if (mAuth.getCurrentUser().isAnonymous()) {
-                navigateToMain(true);
-            } else {
-                checkRoleAndNavigate(mAuth.getCurrentUser().getUid());
-            }
+            navigateToMain(mAuth.getCurrentUser().isAnonymous());
             return;
         }
 
@@ -128,7 +124,7 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
                     Toast.makeText(this, "Welcome back!", Toast.LENGTH_SHORT).show();
-                    checkRoleAndNavigate(authResult.getUser().getUid());
+                    navigateToMain(false);
                 })
                 .addOnFailureListener(e -> {
                     btnPrimary.setEnabled(true);
@@ -280,35 +276,6 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
-    }
-
-    /**
-     * fetches the user's role from Firestore and routes to the appropriate activity
-     * @param uid authenticated user's uid
-     */
-    private void checkRoleAndNavigate(String uid) {
-        db.collection("users").document(uid).get()
-                .addOnSuccessListener(doc -> {
-                    String role = doc.getString("role");
-                    if ("admin".equals(role)) {
-                        navigateToAdmin();
-                    } else {
-                        navigateToMain(false);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (btnPrimary != null) btnPrimary.setEnabled(true);
-                    Toast.makeText(this, "Failed to load profile: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                });
-    }
-
-    /**
-     * navigates admin user to the admin dashboard
-     */
-    private void navigateToAdmin() {
-        Intent intent = new Intent(this, AdminActivity.class);
-        startActivity(intent);
-        finish();
     }
 
     /**

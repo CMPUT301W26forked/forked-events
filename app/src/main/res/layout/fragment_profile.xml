@@ -118,6 +118,16 @@
                 android:textColor="@color/white" />
 
             <Button
+                android:id="@+id/btnAdminPanel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:backgroundTint="#212121"
+                android:text="Admin Panel"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <Button
                 android:id="@+id/btnLogout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

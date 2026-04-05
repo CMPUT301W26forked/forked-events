@@ -296,7 +296,7 @@ public class FSEventRepo implements EventRepo {
             notification.put("eventId", eventId);
             notification.put("eventName", eventName);
             notification.put("entrantId", entrantId);
-            notification.put("message", "Unfortunately, you were not selected in the lottery for " + eventName + "." );
+            notification.put("message", "Unfortunately, you were not selected in the lottery for " + eventName + ". You still have a chance to be selected in future rounds!");
             notification.put("type", "NOT_SELECTED");
             notification.put("createdAt", com.google.firebase.Timestamp.now());
             notification.put("isRead", false);

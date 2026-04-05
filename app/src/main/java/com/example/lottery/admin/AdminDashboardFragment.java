@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -28,9 +28,9 @@ import java.util.Map;
 public class AdminDashboardFragment extends Fragment {
 
     private TextView tvAdminId;
-    private View cvEventModeration, cvImageModeration, cvProfileModeration, cvNotificationLog;
-    private Button btnTempLogout;
-    private TextView tvImageModCount, tvEventModCount, tvProfileModCount;
+    private View cvEventModeration, cvImageModeration, cvProfileModeration, cvNotificationLog, cvCommentModeration;
+    private ImageButton btnBack;
+    private TextView tvImageModCount, tvEventModCount, tvProfileModCount, tvCommentModCount;
     private TextView tvTotalUser, tvTotalEvents, tvTotalModeration;
     private FirebaseFirestore db;
     private TextView tvNotificationLogTitle;
@@ -55,11 +55,13 @@ public class AdminDashboardFragment extends Fragment {
         cvImageModeration = view.findViewById(R.id.cvImageModeration);
         cvProfileModeration = view.findViewById(R.id.cvProfileModeration);
         cvNotificationLog = view.findViewById(R.id.cvNotificationLog);
-        btnTempLogout = view.findViewById(R.id.btnTempLogout);
+        cvCommentModeration = view.findViewById(R.id.cvCommentModeration);
+        btnBack = view.findViewById(R.id.btnBack);
 
         tvImageModCount = view.findViewById(R.id.tvImageModCount);
         tvEventModCount = view.findViewById(R.id.tvEventModCount);
         tvProfileModCount = view.findViewById(R.id.tvProfileModCount);
+        tvCommentModCount = view.findViewById(R.id.tvCommentModCount);
         tvTotalUser = view.findViewById(R.id.tvTotalUser);
         tvTotalEvents = view.findViewById(R.id.tvTotalEvents);
         tvTotalModeration = view.findViewById(R.id.tvTotalModeration);
@@ -149,6 +151,9 @@ public class AdminDashboardFragment extends Fragment {
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     commentModCount = querySnapshot.size();
+                    if (tvCommentModCount != null) {
+                        tvCommentModCount.setText(String.valueOf(commentModCount));
+                    }
                     updateTotalModeration();
                 })
                 .addOnFailureListener(e -> {
@@ -165,8 +170,8 @@ public class AdminDashboardFragment extends Fragment {
     }
 
     /**
-     * Sets click listeners for dashboard cards and logout button.
-     * Handles navigation between admin fragments and logout action.
+     * Sets click listeners for dashboard cards and back button.
+     * Handles navigation between admin fragments and closing the admin activity.
      */
     private void setupClickListeners() {
         cvEventModeration.setOnClickListener(v -> {
@@ -197,11 +202,14 @@ public class AdminDashboardFragment extends Fragment {
                     .commit();
         });
 
-        btnTempLogout.setOnClickListener(v -> {
-            FirebaseAuth.getInstance().signOut();
-            Intent intent = new Intent(getActivity(), LoginActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
+        cvCommentModeration.setOnClickListener(v -> {
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.adminFragmentContainer, new AdminCommentsFragment())
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        btnBack.setOnClickListener(v -> {
             if (getActivity() != null) {
                 getActivity().finish();
             }
