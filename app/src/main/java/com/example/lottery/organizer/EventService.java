@@ -165,7 +165,6 @@ public class EventService {
                     repo.markEntrantSelected(eventId, entrantId, new RepoCallback<Void>() {
                         @Override
                         public void onSuccess(Void result) {
-                            // entrant will be notified if selected
                             repo.createNotification(
                                     eventId,
                                     entrantId,
@@ -197,6 +196,21 @@ public class EventService {
                             cb.onError(e);
                         }
                     });
+                }
+                for (int i = count; i < ids.size(); i++) {
+                    String loserId = ids.get(i);
+                    repo.createLossNotification(
+                            eventId,
+                            loserId,
+                            eventName,
+                            new RepoCallback<Void>() {
+                                @Override
+                                public void onSuccess(Void result) {}
+
+                                @Override
+                                public void onError(Exception e) {}
+                            }
+                    );
                 }
             }
 

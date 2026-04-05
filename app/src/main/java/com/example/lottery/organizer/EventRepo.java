@@ -137,6 +137,17 @@ public interface EventRepo {
      * @param cb callback for success or failure
      */
     void deleteEvent(String eventId, RepoCallback<Void> cb);
+
+    /***
+     * Notifies entrant they were not selected
+     * @param eventId event id
+     * @param entrantId entrant id
+     * @param eventName event name
+     * @param cb callback for success or error
+     */
+    void createLossNotification(String eventId, String entrantId, String eventName, RepoCallback<Void> cb);
 }
+
+
 
 
