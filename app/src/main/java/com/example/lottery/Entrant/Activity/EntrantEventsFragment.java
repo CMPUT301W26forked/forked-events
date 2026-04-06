@@ -33,6 +33,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
+/**
+ * Fragment that displays all available events to entrants.
+ * Supports searching and filtering of events.
+ */
 public class EntrantEventsFragment extends Fragment {
 
     private static final String TAG = "EntrantEventsFragment";
@@ -57,7 +61,9 @@ public class EntrantEventsFragment extends Fragment {
     public EntrantEventsFragment() {
         // required empty public constructor
     }
-
+    /**
+     * Initializes UI components and loads events.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -94,6 +100,9 @@ public class EntrantEventsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Sets up search functionality for filtering events.
+     */
     private void setupSearch() {
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
@@ -114,10 +123,16 @@ public class EntrantEventsFragment extends Fragment {
         });
     }
 
+    /**
+     * Sets up filter button click listener.
+     */
     private void setupFilter() {
         ivFilter.setOnClickListener(v -> openFilterDialog());
     }
 
+    /**
+     * Loads events from Firestore and filters out private events.
+     */
     private void loadEvents() {
         db.collection("events")
                 .get()
@@ -166,6 +181,9 @@ public class EntrantEventsFragment extends Fragment {
         adapter.notifyDataSetChanged();
     }
 
+    /**
+     * Checks if event matches search keyword.
+     */
     private boolean matchesKeyword(Event event, String keyword) {
         if (keyword.isEmpty()) {
             return true;
@@ -182,6 +200,9 @@ public class EntrantEventsFragment extends Fragment {
                 || status.contains(keyword);
     }
 
+    /**
+     * Checks if event matches selected date range.
+     */
     private boolean matchesAvailability(Event event) {
         if (availableFromMillis == null && availableToMillis == null) {
             return true;
@@ -204,6 +225,9 @@ public class EntrantEventsFragment extends Fragment {
         return eventEnd >= filterStart && eventStart <= filterEnd;
     }
 
+    /**
+     * Checks if event has available spots.
+     */
     private boolean matchesCapacity(Event event) {
         if (!onlyShowAvailableSpots) {
             return true;
@@ -224,6 +248,9 @@ public class EntrantEventsFragment extends Fragment {
         return joinedCount < totalSpots;
     }
 
+    /**
+     * Opens dialog for selecting filter options.
+     */
     private void openFilterDialog() {
         View dialogView = LayoutInflater.from(requireContext())
                 .inflate(R.layout.dialog_event_filter, null);
@@ -274,6 +301,9 @@ public class EntrantEventsFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Shows date picker dialog.
+     */
     private void showDatePicker(OnDateSelectedListener listener) {
         Calendar calendar = Calendar.getInstance();
 
@@ -299,6 +329,9 @@ public class EntrantEventsFragment extends Fragment {
         dialog.show();
     }
 
+    /**
+     * Formats date for display in input fields.
+     */
     private String formatDateForInput(Long millis) {
         if (millis == null) {
             return "";
@@ -308,10 +341,16 @@ public class EntrantEventsFragment extends Fragment {
         return sdf.format(new Date(millis));
     }
 
+    /**
+     * Safely converts string to lowercase.
+     */
     private String safeLower(String value) {
         return value == null ? "" : value.toLowerCase(Locale.getDefault());
     }
 
+    /**
+     * Listener for date selection.
+     */
     private interface OnDateSelectedListener {
         void onDateSelected(long millis);
     }

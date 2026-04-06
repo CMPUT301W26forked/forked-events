@@ -20,6 +20,10 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 
+/**
+ * Fragment that displays invitations for an entrant.
+ * Loads invitations from Firestore and shows them in a list.
+ */
 public class EntrantInvitationsFragment extends Fragment {
 
     private RecyclerView rvNotifications;
@@ -31,6 +35,9 @@ public class EntrantInvitationsFragment extends Fragment {
         // Required empty public constructor
     }
 
+    /**
+     * Initializes UI and loads invitations.
+     */
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -56,6 +63,9 @@ public class EntrantInvitationsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Loads invitations from Firestore for the current user.
+     */
     private void loadInvitations() {
         String entrantId = DeviceManager.getDeviceId(requireContext());
 

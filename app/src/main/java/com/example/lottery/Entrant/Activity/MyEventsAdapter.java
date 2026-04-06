@@ -16,20 +16,36 @@ import com.example.lottery.R;
 
 import java.util.List;
 
+/**
+ * Adapter for displaying a list of events in a RecyclerView.
+ * Handles binding event data and click actions.
+ */
 public class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.MyEventViewHolder> {
 
+    /**
+     * Listener for handling view details button clicks.
+     */
     public interface OnViewDetailsClickListener {
         void onViewDetailsClick(Event event);
     }
 
+    /** List of events */
     private final List<Event> eventList;
+
+    /** Click listener */
     private final OnViewDetailsClickListener listener;
 
+    /**
+     * Constructor for adapter.
+     */
     public MyEventsAdapter(List<Event> eventList, OnViewDetailsClickListener listener) {
         this.eventList = eventList;
         this.listener = listener;
     }
 
+    /**
+     * Creates a new ViewHolder.
+     */
     @NonNull
     @Override
     public MyEventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -37,6 +53,9 @@ public class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.MyEven
         return new MyEventViewHolder(view);
     }
 
+    /**
+     * Binds event data to the ViewHolder.
+     */
     @Override
     public void onBindViewHolder(@NonNull MyEventViewHolder holder, int position) {
         Event event = eventList.get(position);
@@ -68,11 +87,17 @@ public class MyEventsAdapter extends RecyclerView.Adapter<MyEventsAdapter.MyEven
         });
     }
 
+    /**
+     * Returns number of events.
+     */
     @Override
     public int getItemCount() {
         return eventList.size();
     }
 
+    /**
+     * ViewHolder for event item.
+     */
     static class MyEventViewHolder extends RecyclerView.ViewHolder {
         TextView tvEventTitle, tvEventDate, tvEventStatus;
         Button btnViewDetails;
