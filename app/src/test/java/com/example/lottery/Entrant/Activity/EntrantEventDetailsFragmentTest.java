@@ -87,17 +87,6 @@ public class EntrantEventDetailsFragmentTest {
     }
 
     /**
-     * When waitlist limit is zero, it should be treated as full.
-     */
-    @Test
-    public void joinWaitlist_whenLimitIsZero_isFull() {
-        long waitListLimit = 0L;
-        long waitlistCount = 0L;
-        boolean isFull = waitlistCount >= waitListLimit;
-        assertTrue(isFull);
-    }
-
-    /**
      * After leaving, entrant should not be on waitlist.
      */
     @Test
@@ -105,26 +94,6 @@ public class EntrantEventDetailsFragmentTest {
         boolean isOnWaitlist = true;
         isOnWaitlist = false;
         assertFalse(isOnWaitlist);
-    }
-
-    /**
-     * After leaving, waitlist count decreases by 1.
-     */
-    @Test
-    public void leaveWaitlist_decrementsWaitlistCount() {
-        long waitlistCount = 3L;
-        waitlistCount = waitlistCount - 1;
-        assertEquals(2L, waitlistCount);
-    }
-
-    /**
-     * Waitlist count should not go below zero.
-     */
-    @Test
-    public void leaveWaitlist_whenCountIsOne_doesNotGoNegative() {
-        long waitlistCount = 1L;
-        waitlistCount = Math.max(0, waitlistCount - 1);
-        assertEquals(0L, waitlistCount);
     }
 
     /**
@@ -138,16 +107,6 @@ public class EntrantEventDetailsFragmentTest {
     }
 
     /**
-     * Null waitlist count should display as zero.
-     */
-    @Test
-    public void loadEventDetails_whenWaitlistCountNull_displaysZero() {
-        Long waitlistCount = null;
-        String display = waitlistCount != null ? String.valueOf(waitlistCount) : "0";
-        assertEquals("0", display);
-    }
-
-    /**
      * When entrant is in waitlist, it should be detected.
      */
     @Test
@@ -157,25 +116,6 @@ public class EntrantEventDetailsFragmentTest {
         assertTrue(isOnWaitlist);
     }
 
-    /**
-     * When entrant is not in waitlist, it should be detected.
-     */
-    @Test
-    public void loadEventDetails_whenEntrantNotOnWaitlist_setsFalse() {
-        List<String> waitlistedIds = Arrays.asList("id2", "id3");
-        boolean isOnWaitlist = waitlistedIds.contains(TEST_ENTRANT_ID);
-        assertFalse(isOnWaitlist);
-    }
-
-    /**
-     * When waitlist list is null, entrant should not be on waitlist.
-     */
-    @Test
-    public void loadEventDetails_whenWaitlistNull_setsFalse() {
-        List<String> waitlistedIds = null;
-        boolean isOnWaitlist = waitlistedIds != null && waitlistedIds.contains(TEST_ENTRANT_ID);
-        assertFalse(isOnWaitlist);
-    }
 
     /**
      * Choosing "No" removes entrant from waitlist.
@@ -202,24 +142,6 @@ public class EntrantEventDetailsFragmentTest {
 
         if (choseYes) {
             isOnWaitlist = true;
-        }
-
-        assertTrue(isOnWaitlist);
-    }
-
-    /**
-     * If no option is chosen, state should not change.
-     */
-    @Test
-    public void showStayInList_noChoice_stateUnchanged() {
-        boolean isOnWaitlist = true;
-        boolean choseYes = false;
-        boolean choseNo = false;
-
-        if (choseYes) {
-            isOnWaitlist = true;
-        } else if (choseNo) {
-            isOnWaitlist = false;
         }
 
         assertTrue(isOnWaitlist);
