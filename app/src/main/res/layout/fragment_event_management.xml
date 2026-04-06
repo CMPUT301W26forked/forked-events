@@ -188,6 +188,30 @@
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
+                android:layout_width="0dp"
+                android:layout_height="160dp"
+                android:layout_columnWeight="1"
+                app:cardBackgroundColor="#E0E0E0"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
+
+                <TextView
+                    android:id="@+id/btnViewComments"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center"
+                    android:text="View\nComments"
+                    android:textColor="@color/black"
+                    android:textSize="32sp"
+                    android:textStyle="bold" />
+            </androidx.cardview.widget.CardView>
+
+
+            <androidx.cardview.widget.CardView
                 android:id="@+id/cardInvite"
                 android:layout_width="0dp"
                 android:layout_height="160dp"
@@ -211,6 +235,8 @@
                     android:textSize="34sp"
                     android:textStyle="bold" />
             </androidx.cardview.widget.CardView>
+
+
 
         </GridLayout>
     </ScrollView>

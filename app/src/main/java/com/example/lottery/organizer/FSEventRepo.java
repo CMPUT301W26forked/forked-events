@@ -2,6 +2,7 @@ package com.example.lottery.organizer;
 
 import com.example.lottery.EventComment;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
@@ -454,13 +455,73 @@ public class FSEventRepo implements EventRepo {
      */
     @Override
     public void deleteEventComment(String eventId, String commentId, RepoCallback<Void> cb) {
-        ref(eventId)
-                .collection("comments")
-                .document(commentId)
-                .delete()
-                .addOnSuccessListener(v -> cb.onSuccess(null))
+        deleteCommentTree(ref(eventId).collection("comments"), commentId, cb);
+    }
+
+    /**
+     * check tree and proceed to delete
+     * @param commentsRef
+     * @param commentId
+     * @param cb
+     */
+    private void deleteCommentTree(CollectionReference commentsRef, String commentId, RepoCallback<Void> cb) {
+        commentsRef.whereEqualTo("parentCommentId", commentId)
+                .get()
+                .addOnSuccessListener(qs -> {
+                    List<String> childIds = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : qs) {
+                        childIds.add(doc.getId());
+                    }
+
+                    deleteChildrenThenSelf(commentsRef, childIds, commentId, cb);
+                })
                 .addOnFailureListener(cb::onError);
     }
+
+    /**
+     * deletion
+     * @param commentsRef
+     * @param childIds
+     * @param commentId
+     * @param cb
+     */
+    private void deleteChildrenThenSelf(CollectionReference commentsRef, List<String> childIds, String commentId, RepoCallback<Void> cb) {
+        if (childIds.isEmpty()) {
+            commentsRef.document(commentId)
+                    .delete()
+                    .addOnSuccessListener(v -> cb.onSuccess(null))
+                    .addOnFailureListener(cb::onError);
+            return;
+        }
+
+        final int total = childIds.size();
+        final int[] done = {0};
+        final boolean[] failed = {false};
+
+        for (String childId : childIds) {
+            deleteCommentTree(commentsRef, childId, new RepoCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    if (failed[0]) return;
+                    done[0]++;
+                    if (done[0] == total) {
+                        commentsRef.document(commentId)
+                                .delete()
+                                .addOnSuccessListener(v -> cb.onSuccess(null))
+                                .addOnFailureListener(cb::onError);
+                    }
+                }
+
+                @Override
+                public void onError(Exception e) {
+                    if (failed[0]) return;
+                    failed[0] = true;
+                    cb.onError(e);
+                }
+            });
+        }
+    }
+
 
     /***
      * US 03.01.01 deletes an event
