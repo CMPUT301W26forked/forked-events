@@ -520,47 +520,36 @@ public class ProfileFragment extends Fragment {
                 .document(userId)
                 .get()
                 .addOnSuccessListener(userDoc -> {
-                    myEvents.clear();
-
                     if (!userDoc.exists()) {
+                        myEvents.clear();
                         adapter.notifyDataSetChanged();
                         return;
                     }
 
                     List<String> registeredEventIds = (List<String>) userDoc.get("registeredEventIds");
                     if (registeredEventIds == null || registeredEventIds.isEmpty()) {
+                        myEvents.clear();
                         adapter.notifyDataSetChanged();
                         return;
                     }
 
-                    final int totalEvents = registeredEventIds.size();
-                    final int[] loadedCount = {0};
-
+                    List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
                     for (String eventId : registeredEventIds) {
-                        db.collection("events")
-                                .document(eventId)
-                                .get()
-                                .addOnSuccessListener(eventDoc -> {
-                                    loadedCount[0]++;
-
-                                    if (eventDoc.exists()) {
-                                        Event event = mapFirestoreDocToEvent(eventDoc);
-                                        if (event != null && !containsEvent(event.getEventId())) {
-                                            myEvents.add(event);
-                                        }
-                                    }
-
-                                    if (loadedCount[0] == totalEvents) {
-                                        adapter.notifyDataSetChanged();
-                                    }
-                                })
-                                .addOnFailureListener(e -> {
-                                    loadedCount[0]++;
-                                    if (loadedCount[0] == totalEvents) {
-                                        adapter.notifyDataSetChanged();
-                                    }
-                                });
+                        tasks.add(db.collection("events").document(eventId).get());
                     }
+
+                    Tasks.whenAllComplete(tasks).addOnCompleteListener(allTasks -> {
+                        myEvents.clear();
+                        for (Task<DocumentSnapshot> task : tasks) {
+                            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                                Event event = mapFirestoreDocToEvent(task.getResult());
+                                if (event != null) {
+                                    myEvents.add(event);
+                                }
+                            }
+                        }
+                        adapter.notifyDataSetChanged();
+                    });
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(), "Failed to load events", Toast.LENGTH_SHORT).show()
