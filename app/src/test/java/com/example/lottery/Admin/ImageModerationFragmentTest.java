@@ -1,8 +1,10 @@
-package com.example.lottery.admin;
+package com.example.lottery.Admin;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import com.example.lottery.admin.ModerationItem;
 
 import org.junit.Before;
 import org.junit.Test;

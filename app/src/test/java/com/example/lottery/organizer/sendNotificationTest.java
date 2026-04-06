@@ -9,8 +9,6 @@ import java.util.List;
 import static org.mockito.Mockito.*;
 
 import com.example.lottery.SendNotificationsFragment;
-import com.example.lottery.organizer.FSEventRepo;
-import com.example.lottery.organizer.RepoCallback;
 
 
 /**
