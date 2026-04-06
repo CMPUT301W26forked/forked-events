@@ -34,11 +34,11 @@ public class sendNotificationTest {
             RepoCallback<List<String>> cb = inv.getArgument(1);
             cb.onSuccess(ids);
             return null;
-        }).when(repo).getPendingEntrantIds(any(),any());
+        }).when(repo).getRegisteredEntrantIds(any(),any());
 
         fragment.sendMessage(false);
 
-        verify(repo).getPendingEntrantIds(any(),any());
+        verify(repo).getRegisteredEntrantIds(any(),any());
         verify(repo).sendMessageToEntrant(any(), any(), eq(ids), eq("hello"), eq("selected"), any());
     }
 

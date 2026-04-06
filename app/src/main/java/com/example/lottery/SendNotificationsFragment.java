@@ -76,7 +76,7 @@ public class SendNotificationsFragment extends Fragment {
         }
 
         if (!sendToCancelled) {
-            repo.getPendingEntrantIds(EventId, new RepoCallback<List<String>>() {
+            repo.getRegisteredEntrantIds(EventId, new RepoCallback<List<String>>() {
                 @Override
                 public void onSuccess(List<String> ids) {
                     repo.sendMessageToEntrant(EventId, EventName, ids, message, "selected", new RepoCallback<Void>() {
