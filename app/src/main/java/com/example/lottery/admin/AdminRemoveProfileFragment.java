@@ -37,6 +37,7 @@ public class AdminRemoveProfileFragment extends Fragment {
     private String profilePictureUri;
 
     private FirebaseFirestore db;
+    private AlertDialog confirmDialog;
 
     /**
      * Creates a new instance of this fragment with user data passed as arguments.
@@ -122,12 +123,26 @@ public class AdminRemoveProfileFragment extends Fragment {
      * Ensures admin explicitly confirms destructive action.
      */
     private void showConfirmDialog() {
-        new AlertDialog.Builder(requireContext())
+        if (!isAdded()) {
+            return;
+        }
+
+        dismissConfirmDialog();
+
+        confirmDialog = new AlertDialog.Builder(requireContext())
                 .setTitle("Remove profile")
                 .setMessage("This will permanently delete the profile.")
                 .setPositiveButton("Confirm", (dialog, which) -> removeProfile())
                 .setNegativeButton("Cancel", null)
-                .show();
+                .create();
+        confirmDialog.show();
+    }
+
+    private void dismissConfirmDialog() {
+        if (confirmDialog != null) {
+            confirmDialog.dismiss();
+            confirmDialog = null;
+        }
     }
 
     /**
@@ -203,6 +218,7 @@ public class AdminRemoveProfileFragment extends Fragment {
 
                                     batch.commit()
                                             .addOnSuccessListener(unused -> {
+                                                dismissConfirmDialog();
                                                 Toast.makeText(requireContext(), "Profile removed", Toast.LENGTH_SHORT).show();
                                                 getParentFragmentManager().popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
                                                 getParentFragmentManager().beginTransaction()
@@ -221,5 +237,11 @@ public class AdminRemoveProfileFragment extends Fragment {
                 .addOnFailureListener(e ->
                         Toast.makeText(requireContext(), "Failed to load user notifications", Toast.LENGTH_SHORT).show()
                 );
+    }
+
+    @Override
+    public void onDestroyView() {
+        dismissConfirmDialog();
+        super.onDestroyView();
     }
 }

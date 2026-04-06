@@ -1,0 +1,322 @@
+@startuml
+title Forked Events - Project Class Diagram
+scale 0.5
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+package "com.example.lottery" {
+  class LotteryApplication
+  class MainActivity
+  class Event
+  class EventComment
+  class Notification
+  class EventAdapter
+  interface OnEventClickListener
+  class OrganizerAdapter
+  class ProfileAdapter
+  interface OnProfileClickListener
+  class CommentsAdapter
+  interface OnDeleteClickListener
+  class NotificationsAdapter
+  class OrganizerFragment
+  class EventsFragment
+  class EventBuilderFragment
+  interface MillisCallback
+  class EventManagementFragment
+  class ViewCommentsFragment
+  class SendNotificationsFragment
+  class SearchProfilesFragment
+  class NotificationsFragment
+  class WaitlistMapFragment
+}
+
+package "com.example.lottery.Common.Utils" {
+  class DeviceManager
+}
+
+package "com.example.lottery.organizer" {
+  interface RepoCallback
+  interface EventRepo
+  class FSEventRepo
+  interface NotificationEnabledCallback
+  class PosterStorageService
+  class EventService
+  class OrganizerListService
+}
+
+package "com.example.lottery.Entrant.Model" {
+  class EntrantProfile
+  class EntrantInvitation
+}
+
+package "com.example.lottery.Entrant.Repo" {
+  interface WaitlistCallback
+  interface WaitlistRepo
+  class FSWaitlistRepo
+  class EntrantRepository
+  class EntrantEventRepository
+}
+
+package "com.example.lottery.Entrant.Service" {
+  class WaitlistService
+  class EntrantService
+}
+
+package "com.example.lottery.Entrant.Activity" {
+  class LoginActivity
+  class EntrantEventsFragment
+  class EntrantEventDetailsFragment
+  class EntrantInvitationsFragment
+  class EntrantNotificationsAdapter
+  class ProfileFragment
+  class MyEventsAdapter
+  interface OnViewDetailsClickListener
+  class QrScannerFragment
+  class QrDisplayFragment
+  class QrEventDetailsFragment
+  class ViewListsFragment
+  class EntrantInfo
+  class EntrantAdapter
+  class Comment
+  class "CommentsAdapter" as EntrantCommentsAdapter
+  interface OnReplyClickListener
+}
+
+package "com.example.lottery.admin" {
+  class AdminActivity
+  class AdminDashboardFragment
+  class AdminEventModerationFragment
+  class AdminEventModerationDetailFragment
+  class AdminCommentsFragment
+  class AdminCommentAdapter
+  interface OnCommentDeleteListener
+  class ImageModerationFragment
+  class ModerationItem
+  class ModerationAdapter
+  interface OnRemoveListener
+  class AdminProfileItem
+  class AdminProfileModerationFragment
+  class AdminProfileAdapter
+  class AdminRemoveProfileFragment
+  class AdminRemoveOrganizerFragment
+  class NotificationLogItem
+  class NotificationLogsFragment
+  class TempLogGroup
+  class NotificationLogsAdapter
+}
+
+' Inheritance / implementation
+LotteryApplication --|> Application
+MainActivity --|> AppCompatActivity
+WaitlistMapFragment --|> Fragment
+OrganizerFragment --|> Fragment
+EventsFragment --|> Fragment
+EventBuilderFragment --|> Fragment
+EventManagementFragment --|> Fragment
+ViewCommentsFragment --|> Fragment
+SendNotificationsFragment --|> Fragment
+SearchProfilesFragment --|> Fragment
+NotificationsFragment --|> Fragment
+
+LoginActivity --|> AppCompatActivity
+EntrantEventsFragment --|> Fragment
+EntrantEventDetailsFragment --|> Fragment
+EntrantInvitationsFragment --|> Fragment
+ProfileFragment --|> Fragment
+QrScannerFragment --|> Fragment
+QrDisplayFragment --|> Fragment
+QrEventDetailsFragment --|> Fragment
+ViewListsFragment --|> Fragment
+
+AdminActivity --|> AppCompatActivity
+AdminDashboardFragment --|> Fragment
+AdminEventModerationFragment --|> Fragment
+AdminEventModerationDetailFragment --|> Fragment
+AdminCommentsFragment --|> Fragment
+ImageModerationFragment --|> Fragment
+AdminProfileModerationFragment --|> Fragment
+AdminRemoveProfileFragment --|> Fragment
+AdminRemoveOrganizerFragment --|> Fragment
+NotificationLogsFragment --|> Fragment
+
+EventAdapter --|> RecyclerView.Adapter
+OrganizerAdapter --|> RecyclerView.Adapter
+ProfileAdapter --|> RecyclerView.Adapter
+CommentsAdapter --|> RecyclerView.Adapter
+NotificationsAdapter --|> RecyclerView.Adapter
+EntrantNotificationsAdapter --|> RecyclerView.Adapter
+MyEventsAdapter --|> RecyclerView.Adapter
+EntrantCommentsAdapter --|> RecyclerView.Adapter
+AdminCommentAdapter --|> RecyclerView.Adapter
+ModerationAdapter --|> RecyclerView.Adapter
+AdminProfileAdapter --|> RecyclerView.Adapter
+NotificationLogsAdapter --|> RecyclerView.Adapter
+EntrantAdapter --|> RecyclerView.Adapter
+
+FSEventRepo ..|> EventRepo
+FSWaitlistRepo ..|> WaitlistRepo
+
+' Callback / listener ties
+EventAdapter ..> OnEventClickListener
+ProfileAdapter ..> OnProfileClickListener
+CommentsAdapter ..> OnDeleteClickListener
+EntrantCommentsAdapter ..> OnReplyClickListener
+MyEventsAdapter ..> OnViewDetailsClickListener
+AdminCommentAdapter ..> OnCommentDeleteListener
+ModerationAdapter ..> OnRemoveListener
+
+EventBuilderFragment ..> MillisCallback
+FSEventRepo ..> NotificationEnabledCallback
+
+' Core model usage
+EventAdapter --> Event
+OrganizerAdapter --> Event
+MyEventsAdapter --> Event
+EventManagementFragment --> Event
+OrganizerFragment --> Event
+EventsFragment --> Event
+EntrantEventsFragment --> Event
+AdminEventModerationFragment --> Event
+ProfileFragment --> Event
+
+CommentsAdapter --> EventComment
+ViewCommentsFragment --> EventComment
+EventRepo --> EventComment
+FSEventRepo --> EventComment
+EventService --> EventComment
+AdminCommentsFragment --> EventComment
+AdminCommentAdapter --> EventComment
+
+NotificationsAdapter --> Notification
+NotificationsFragment --> Notification
+
+ProfileAdapter --> EntrantProfile
+SearchProfilesFragment --> EntrantProfile
+
+EntrantNotificationsAdapter --> EntrantInvitation
+EntrantInvitationsFragment --> EntrantInvitation
+
+EntrantCommentsAdapter --> Comment
+EntrantEventDetailsFragment --> Comment
+AdminEventModerationDetailFragment --> Comment
+
+ModerationAdapter --> ModerationItem
+ImageModerationFragment --> ModerationItem
+
+AdminProfileAdapter --> AdminProfileItem
+AdminProfileModerationFragment --> AdminProfileItem
+
+NotificationLogsAdapter --> NotificationLogItem
+NotificationLogsFragment --> NotificationLogItem
+NotificationLogsFragment --> TempLogGroup
+
+ViewListsFragment --> EntrantInfo
+ViewListsFragment --> EntrantAdapter
+EntrantAdapter --> EntrantInfo
+
+' Service / repository composition
+EventService *-- EventRepo
+EventService *-- PosterStorageService
+OrganizerListService *-- EventRepo
+WaitlistService *-- WaitlistRepo
+
+EventBuilderFragment *-- EventService
+EventBuilderFragment *-- FSEventRepo
+EventManagementFragment *-- EventService
+EventManagementFragment *-- FSEventRepo
+ViewCommentsFragment *-- EventService
+SendNotificationsFragment *-- FSEventRepo
+SearchProfilesFragment *-- FSEventRepo
+ImageModerationFragment *-- FSEventRepo
+ImageModerationFragment *-- PosterStorageService
+EntrantEventDetailsFragment *-- EntrantService
+EntrantEventDetailsFragment *-- WaitlistService
+ViewListsFragment *-- FSEventRepo
+
+' Navigation / usage dependencies
+MainActivity --> LoginActivity
+MainActivity --> EntrantEventsFragment
+MainActivity --> OrganizerFragment
+MainActivity --> QrScannerFragment
+MainActivity --> ProfileFragment
+MainActivity --> NotificationsFragment
+
+OrganizerFragment --> OrganizerAdapter
+OrganizerFragment --> EventBuilderFragment
+OrganizerFragment --> EntrantEventsFragment
+
+EventsFragment --> EventAdapter
+
+EventManagementFragment --> ViewListsFragment
+EventManagementFragment --> WaitlistMapFragment
+EventManagementFragment --> SendNotificationsFragment
+EventManagementFragment --> SearchProfilesFragment
+
+ViewCommentsFragment --> CommentsAdapter
+
+NotificationsFragment --> NotificationsAdapter
+NotificationsAdapter --> EntrantEventDetailsFragment
+
+SearchProfilesFragment --> ProfileAdapter
+
+EntrantEventsFragment --> EventAdapter
+EntrantEventsFragment --> EntrantEventDetailsFragment
+
+EntrantEventDetailsFragment --> EntrantCommentsAdapter
+EntrantEventDetailsFragment --> EntrantService
+EntrantEventDetailsFragment --> WaitlistService
+EntrantEventDetailsFragment --> QrDisplayFragment
+EntrantEventDetailsFragment --> DeviceManager
+
+EntrantInvitationsFragment --> EntrantNotificationsAdapter
+EntrantInvitationsFragment --> DeviceManager
+EntrantNotificationsAdapter --> EntrantEventDetailsFragment
+
+ProfileFragment --> MyEventsAdapter
+ProfileFragment --> EntrantEventsFragment
+ProfileFragment --> EntrantEventDetailsFragment
+ProfileFragment --> AdminActivity
+ProfileFragment --> LoginActivity
+
+LoginActivity --> MainActivity
+LoginActivity --> AdminActivity
+
+QrScannerFragment --> EntrantEventsFragment
+QrScannerFragment --> EntrantEventDetailsFragment
+
+AdminActivity --> AdminDashboardFragment
+AdminDashboardFragment --> AdminEventModerationFragment
+AdminDashboardFragment --> NotificationLogsFragment
+AdminDashboardFragment --> ImageModerationFragment
+AdminDashboardFragment --> AdminProfileModerationFragment
+AdminDashboardFragment --> AdminCommentsFragment
+AdminDashboardFragment --> LoginActivity
+
+AdminEventModerationFragment --> EventAdapter
+AdminEventModerationFragment --> AdminEventModerationDetailFragment
+
+AdminEventModerationDetailFragment --> EntrantCommentsAdapter
+AdminEventModerationDetailFragment --> AdminRemoveOrganizerFragment
+AdminEventModerationDetailFragment --> FSEventRepo
+
+AdminCommentsFragment --> AdminCommentAdapter
+
+AdminProfileModerationFragment --> AdminProfileAdapter
+AdminProfileModerationFragment --> AdminRemoveProfileFragment
+
+NotificationLogsFragment --> NotificationLogsAdapter
+
+' Notes for duplicate class names
+note right of CommentsAdapter
+Organizer/admin comment adapter.
+Uses EventComment.
+end note
+
+note right of EntrantCommentsAdapter
+Entrant/admin event-detail adapter.
+Uses Entrant.Activity.Comment.
+end note
+
+@enduml
