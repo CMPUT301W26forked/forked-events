@@ -138,6 +138,17 @@ public class EventManagementFragment extends Fragment {
             });
         }
 
+        View btnViewComments = view.findViewById(R.id.btnViewComments);
+        if (btnViewComments != null) {
+            btnViewComments.setOnClickListener(v -> {
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, ViewCommentsFragment.newInstance(eventId, eventName))
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
+
+
         return view;
     }
 
