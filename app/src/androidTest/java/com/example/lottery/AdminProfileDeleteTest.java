@@ -16,6 +16,7 @@ import androidx.fragment.app.testing.FragmentScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 
+import com.example.lottery.R;
 import com.example.lottery.admin.AdminRemoveProfileFragment;
 
 import org.junit.Test;
@@ -94,7 +95,7 @@ public class AdminProfileDeleteTest {
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()));
 
-        onView(withText("This will remove the user's profile from the app and clean their event references. This does not delete their Firebase login account."))
+        onView(withText("This will permanently delete the profile."))
                 .inRoot(isDialog())
                 .check(matches(isDisplayed()));
     }
