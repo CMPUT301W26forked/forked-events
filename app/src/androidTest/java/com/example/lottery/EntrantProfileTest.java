@@ -1,9 +1,7 @@
 package com.example.lottery;
 
 import com.example.lottery.Entrant.Model.EntrantProfile;
-import com.example.lottery.admin.AdminRemoveProfileFragment;
 
-import androidx.fragment.app.testing.FragmentScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
