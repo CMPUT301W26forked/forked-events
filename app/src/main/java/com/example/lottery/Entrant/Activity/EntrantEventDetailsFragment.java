@@ -48,6 +48,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * EntrantEventDetailsFragment
+ *
+ * This fragment handles:
+ * - Displaying event details
+ * - Joining and leaving the waitlist
+ * - Viewing and posting comments
+ * - Replying to comments (nested threads)
+ * - Reacting to comments
+ * - Optional location-based waitlist joining
+ *
+ * Data is managed using Firebase Firestore.
+ */
+
 public class EntrantEventDetailsFragment extends Fragment {
 
     private String eventId;
