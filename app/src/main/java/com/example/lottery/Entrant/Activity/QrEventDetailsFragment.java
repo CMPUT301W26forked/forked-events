@@ -32,7 +32,6 @@ public class QrEventDetailsFragment extends Fragment {
         ImageButton btnBack = view.findViewById(R.id.btnBack);
         ImageButton btnShowQr = view.findViewById(R.id.btnShowQr);
 
-        TextView tvHeaderTitle = view.findViewById(R.id.tvTitle);
         TextView tvEventName = view.findViewById(R.id.tvEventName);
         TextView tvStatusTag = view.findViewById(R.id.tvStatusTag);
         TextView tvDescription = view.findViewById(R.id.tvDescription);
@@ -61,9 +60,6 @@ public class QrEventDetailsFragment extends Fragment {
             String lotteryInfo = args.getString("lotteryInfo", "");
             String joinedInfo = args.getString("joinedInfo", "");
 
-            if (tvHeaderTitle != null) {
-                tvHeaderTitle.setText("Event Details");
-            }
             tvEventName.setText(title);
             tvStatusTag.setText(status);
             tvDescription.setText(description);
