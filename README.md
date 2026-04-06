@@ -1,3 +1,10 @@
+# CMPUT301 - Group Project (lottery)
+
+Team members: vxxxdx | acc4bosco | vidhisati19 | AB-1223 | ruizhe9 | dvdissan
+
+Description: The app (Android) is designed to help organizers run event registration by letting entrants join a waiting list during a registration period and then using a lottery to select participants.
+
+---
 # How to use API
 Ignore this unless you want to enable Places AutoComplete and Waitlist Map function 
 1. Go to Google Cloud -> create API for Maps SDK for Android | Places API (New)
