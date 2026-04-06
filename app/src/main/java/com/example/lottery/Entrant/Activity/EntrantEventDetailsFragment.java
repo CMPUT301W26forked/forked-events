@@ -716,6 +716,14 @@ public class EntrantEventDetailsFragment extends Fragment {
         db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
             Long waitListLimit = doc.getLong("waitListLimit");
             Long waitlistCount = doc.getLong("waitlistCount");
+            Date now = new Date();
+            Date regStart = doc.getDate("registrationStart");
+            Date regEnd = doc.getDate("registrationEnd");
+
+            if ((regStart != null && now.before(regStart)) || (regEnd != null && now.after(regEnd))) {
+                Toast.makeText(getContext(), "Registration is closed.", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             if (waitListLimit != null && waitlistCount != null && waitlistCount >= waitListLimit) {
                 Toast.makeText(getContext(), "Waitlist is full.", Toast.LENGTH_SHORT).show();

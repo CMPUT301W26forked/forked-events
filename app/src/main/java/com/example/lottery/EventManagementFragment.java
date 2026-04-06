@@ -48,6 +48,10 @@ public class EventManagementFragment extends Fragment {
     private EventService service;
     private long waitlistCount = 0;
     private long waitlistLimit = 0;
+    private long totalSpots = 0;
+    private long confirmedCount = 0;
+    private long pendingCount = 0;
+
 
     @Nullable
     @Override
@@ -217,6 +221,20 @@ public class EventManagementFragment extends Fragment {
                     }
                     int sampleSize = Integer.parseInt(text);
 
+                    long remainingSpots = Math.max(0, totalSpots - confirmedCount - pendingCount);
+
+                    if (remainingSpots <= 0) {
+                        Toast.makeText(requireContext(), "No spots left for new invitations", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    if (sampleSize > remainingSpots) {
+                        Toast.makeText(requireContext(),
+                                "Only " + remainingSpots + " spot(s) remaining",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     service.runLottery(eventId, eventName, sampleSize, new RepoCallback<Void>() {
                         @Override
                         public void onSuccess(Void result) {
@@ -238,6 +256,14 @@ public class EventManagementFragment extends Fragment {
             @Override
             public void onSuccess(DocumentSnapshot doc) {
                 if (doc != null && doc.exists()) {
+                    Long total = doc.getLong("totalSpots");
+                    Long confirmed = doc.getLong("confirmedCount");
+                    List<String> pending = (List<String>) doc.get("pendingEntrantIds");
+
+                    totalSpots = total != null ? total : 0;
+                    confirmedCount = confirmed != null ? confirmed : 0;
+                    pendingCount = pending != null ? pending.size() : 0;
+
                     Long count = doc.getLong("waitlistCount");
                     Long limit = doc.getLong("waitListLimit");
                     waitlistCount = count != null ? count : 0;
