@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.lottery.Entrant.Model.EntrantProfile;
 import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.RepoCallback;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,12 +32,13 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * fragment for searching and displaying user profiles to invite
+ * Fragment for searching and displaying user profiles to invite or add as co-organizer.
  */
 public class SearchProfilesFragment extends Fragment {
 
     private String eventId;
     private String eventName;
+    private boolean isCoOrganizerMode = false;
     private RecyclerView recyclerView;
     private ProfileAdapter adapter;
     private List<EntrantProfile> profileList;
@@ -45,11 +48,29 @@ public class SearchProfilesFragment extends Fragment {
     private FSEventRepo repo;
     private EditText etSearch;
 
+    /**
+     * Creates a new instance of SearchProfilesFragment for inviting users.
+     * @param eventId The ID of the event.
+     * @param eventName The name of the event.
+     * @return A new instance of SearchProfilesFragment.
+     */
     public static SearchProfilesFragment newInstance(String eventId, String eventName) {
+        return newInstance(eventId, eventName, false);
+    }
+
+    /**
+     * Creates a new instance of SearchProfilesFragment with an option for co-organizer mode.
+     * @param eventId The ID of the event.
+     * @param eventName The name of the event.
+     * @param isCoOrganizerMode True if searching for a co-organizer, false for inviting entrants.
+     * @return A new instance of SearchProfilesFragment.
+     */
+    public static SearchProfilesFragment newInstance(String eventId, String eventName, boolean isCoOrganizerMode) {
         SearchProfilesFragment fragment = new SearchProfilesFragment();
         Bundle args = new Bundle();
         args.putString("event_id", eventId);
         args.putString("event_name", eventName);
+        args.putBoolean("is_co_organizer_mode", isCoOrganizerMode);
         fragment.setArguments(args);
         return fragment;
     }
@@ -62,6 +83,7 @@ public class SearchProfilesFragment extends Fragment {
         if (getArguments() != null) {
             eventId = getArguments().getString("event_id");
             eventName = getArguments().getString("event_name");
+            isCoOrganizerMode = getArguments().getBoolean("is_co_organizer_mode", false);
         }
 
         db = FirebaseFirestore.getInstance();
@@ -74,9 +96,23 @@ public class SearchProfilesFragment extends Fragment {
         recyclerView = view.findViewById(R.id.rvProfiles);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
+        TextView tvTitle = view.findViewById(R.id.tvTitle);
+        if (tvTitle != null && isCoOrganizerMode) {
+            tvTitle.setText("Add Co-organizer");
+        }
+
         adapter = new ProfileAdapter(filteredList, profile -> {
-            inviteUser(profile);
+            if (isCoOrganizerMode) {
+                selectCoOrganizer(profile);
+            } else {
+                inviteUser(profile);
+            }
         });
+
+        if (isCoOrganizerMode) {
+            adapter.setButtonText("Add");
+        }
+
         recyclerView.setAdapter(adapter);
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> {
@@ -91,20 +127,34 @@ public class SearchProfilesFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Sets the selected profile as a co-organizer and pops the back stack.
+     * @param profile The selected entrant profile.
+     */
+    private void selectCoOrganizer(EntrantProfile profile) {
+        Bundle result = new Bundle();
+        result.putString("co_organizer_id", profile.getId());
+        result.putString("co_organizer_name", profile.getName());
+        getParentFragmentManager().setFragmentResult("co_organizer_selected", result);
+        getParentFragmentManager().popBackStack();
+    }
+
+    /**
+     * Invites the selected user to the event.
+     * @param profile The entrant profile to invite.
+     */
     private void inviteUser(EntrantProfile profile) {
         if (eventId == null) {
             Toast.makeText(getContext(), "Error: Event ID missing", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 1. Update lists: add to pending, remove from cancelled (if they were there)
         db.collection("events").document(eventId)
                 .update(
                         "pendingEntrantIds", FieldValue.arrayUnion(profile.getId()),
                         "cancelledEntrantIds", FieldValue.arrayRemove(profile.getId())
                 )
                 .addOnSuccessListener(aVoid -> {
-                    // 2. Create a notification for the user using the repository
                     repo.createNotification(eventId, profile.getId(), eventName,
                         "You have been invited to join the private event: " + (eventName != null ? eventName : "New Event"),
                         new RepoCallback<Void>() {
@@ -127,7 +177,7 @@ public class SearchProfilesFragment extends Fragment {
     }
 
     /**
-     * sets up text listener for search input
+     * Sets up the search bar to filter profiles as the user types.
      */
     private void setupSearch() {
         etSearch.addTextChangedListener(new TextWatcher() {
@@ -145,46 +195,69 @@ public class SearchProfilesFragment extends Fragment {
     }
 
     /**
-     * fetches relevant user profiles from firestore
+     * Fetches all eligible profiles from Firestore based on the current mode.
+     * Excludes guest users and the current user.
      */
     private void fetchAllProfiles() {
-        if (eventId == null) return;
-
-        // First fetch the event to see who is allowed to be invited
-        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
-            allowedIds.clear();
-            if (doc.exists()) {
-                List<String> pending = (List<String>) doc.get("pendingEntrantIds");
-                List<String> registered = (List<String>) doc.get("registeredEntrantIds");
-                List<String> cancelled = (List<String>) doc.get("cancelledEntrantIds");
-
-                if (pending != null) allowedIds.addAll(pending);
-                if (registered != null) allowedIds.addAll(registered);
-                if (cancelled != null) allowedIds.addAll(cancelled);
-            }
-
-            // Then fetch all users and filter
+        String currentUserId = FirebaseAuth.getInstance().getUid();
+        if (isCoOrganizerMode) {
             db.collection("users")
+                    .whereEqualTo("isGuest", false)
                     .get()
                     .addOnSuccessListener(queryDocumentSnapshots -> {
                         profileList.clear();
                         for (QueryDocumentSnapshot userDoc : queryDocumentSnapshots) {
-                            if (allowedIds.contains(userDoc.getId())) {
-                                EntrantProfile profile = userDoc.toObject(EntrantProfile.class);
-                                if (profile != null) {
-                                    profile.setId(userDoc.getId());
-                                    profileList.add(profile);
-                                }
+                            if (currentUserId != null && currentUserId.equals(userDoc.getId())) {
+                                continue;
+                            }
+                            EntrantProfile profile = userDoc.toObject(EntrantProfile.class);
+                            if (profile != null) {
+                                profile.setId(userDoc.getId());
+                                profileList.add(profile);
                             }
                         }
                         filterProfiles(etSearch.getText().toString());
                     });
-        }).addOnFailureListener(e -> Log.e("SearchProfiles", "Error fetching event", e));
+        } else {
+            if (eventId == null) return;
+            db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
+                allowedIds.clear();
+                if (doc.exists()) {
+                    List<String> pending = (List<String>) doc.get("pendingEntrantIds");
+                    List<String> registered = (List<String>) doc.get("registeredEntrantIds");
+                    List<String> cancelled = (List<String>) doc.get("cancelledEntrantIds");
+
+                    if (pending != null) allowedIds.addAll(pending);
+                    if (registered != null) allowedIds.addAll(registered);
+                    if (cancelled != null) allowedIds.addAll(cancelled);
+                }
+
+                db.collection("users")
+                        .whereEqualTo("isGuest", false)
+                        .get()
+                        .addOnSuccessListener(queryDocumentSnapshots -> {
+                            profileList.clear();
+                            for (QueryDocumentSnapshot userDoc : queryDocumentSnapshots) {
+                                if (currentUserId != null && currentUserId.equals(userDoc.getId())) {
+                                    continue;
+                                }
+                                if (allowedIds.contains(userDoc.getId())) {
+                                    EntrantProfile profile = userDoc.toObject(EntrantProfile.class);
+                                    if (profile != null) {
+                                        profile.setId(userDoc.getId());
+                                        profileList.add(profile);
+                                    }
+                                }
+                            }
+                            filterProfiles(etSearch.getText().toString());
+                        });
+            }).addOnFailureListener(e -> Log.e("SearchProfiles", "Error fetching event", e));
+        }
     }
 
     /**
-     * filters the profile list based on query string
-     * @param query search text
+     * Filters the profile list based on the search query.
+     * @param query The search query string.
      */
     private void filterProfiles(String query) {
         filteredList.clear();

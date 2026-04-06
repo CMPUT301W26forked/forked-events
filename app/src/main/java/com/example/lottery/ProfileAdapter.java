@@ -20,6 +20,7 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
 
     private final List<EntrantProfile> profileList;
     private final OnProfileClickListener listener;
+    private String buttonText = "Invite"; // Default text
 
     /**
      * listener interface for profile click events
@@ -42,6 +43,15 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
         this.listener = listener;
     }
 
+    /**
+     * sets the text for the action button
+     * @param text the text to display
+     */
+    public void setButtonText(String text) {
+        this.buttonText = text;
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public ProfileViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -54,6 +64,7 @@ public class ProfileAdapter extends RecyclerView.Adapter<ProfileAdapter.ProfileV
         EntrantProfile profile = profileList.get(position);
         holder.tvName.setText(profile.getName());
         holder.tvEmail.setText(profile.getEmail());
+        holder.btnView.setText(buttonText);
 
         holder.btnView.setOnClickListener(v -> listener.onProfileClick(profile));
     }

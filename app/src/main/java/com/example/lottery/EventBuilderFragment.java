@@ -26,7 +26,6 @@ import com.example.lottery.organizer.EventService;
 import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.PosterStorageService;
 import com.example.lottery.organizer.RepoCallback;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Status;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.AutocompletePrediction;
@@ -39,8 +38,8 @@ import com.google.android.libraries.places.widget.PlaceAutocompleteActivity;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.example.lottery.BuildConfig;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,20 +52,21 @@ import java.util.Map;
 import java.text.SimpleDateFormat;
 
 /**
- * Organizer event setup/edit page
- * Organizer can upload/update an event poster; Set the registration start/end time;
+ * Fragment for creating or editing an event.
+ * Allows organizers to set event details, upload posters, and add co-organizers.
  */
 public class EventBuilderFragment extends Fragment {
     private String eventId;
     private EventService service;
     private FSEventRepo repo;
     private ImageView ivPosterPreview;
-    private TextView tvRegPeriod;
+    private TextView tvRegPeriod, tvCoOrganizerName;
     private EditText etEventName, etLocation, etCapacity, etWaitingListLimit, etDescription, etOrganizer;
     private CheckBox cbGeoLocation, cbIsPrivate;
     private Timestamp startTimestamp;
     private Timestamp endTimestamp;
     private String posterUrl;
+    private String coOrganizerId;
     private static final String defaultEventLocation = "Edmonton, Alberta, Canada";
     private static final double defaultEventLat = 53.55;
     private static final double defaultEventLon = -113.49;
@@ -105,6 +105,18 @@ public class EventBuilderFragment extends Fragment {
                     }
             );
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getParentFragmentManager().setFragmentResultListener("co_organizer_selected", this, (requestKey, result) -> {
+            coOrganizerId = result.getString("co_organizer_id");
+            String name = result.getString("co_organizer_name");
+            if (tvCoOrganizerName != null) {
+                tvCoOrganizerName.setText(name != null ? name : "None");
+            }
+        });
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -128,11 +140,20 @@ public class EventBuilderFragment extends Fragment {
         cbIsPrivate = view.findViewById(R.id.cbIsPrivate);
         ivPosterPreview = view.findViewById(R.id.ivPosterPreview);
         tvRegPeriod = view.findViewById(R.id.btnRegPeriod);
+        tvCoOrganizerName = view.findViewById(R.id.tvCoOrganizerName);
 
         view.findViewById(R.id.btnBack).setOnClickListener(v -> getParentFragmentManager().popBackStack());
         view.findViewById(R.id.btnFinish).setOnClickListener(v -> saveEvent());
         view.findViewById(R.id.btnPickPoster).setOnClickListener(v -> pickImg.launch("image/*"));
         tvRegPeriod.setOnClickListener(v -> pickRegistrationPeriod());
+
+        view.findViewById(R.id.btnCoOrganizer).setOnClickListener(v -> {
+            SearchProfilesFragment fragment = SearchProfilesFragment.newInstance(eventId, etEventName.getText().toString(), true);
+            getParentFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
 
         repo = new FSEventRepo();
         service = new EventService(repo, new PosterStorageService());
@@ -145,16 +166,13 @@ public class EventBuilderFragment extends Fragment {
         return view;
     }
 
-    /**
-     * cb interface
-     */
     private interface MillisCallback {
         void onPicked(long millis);
     }
 
     /**
-     * date time picker
-     * @param cb
+     * Opens a date and time picker dialog.
+     * @param cb Callback invoked with the selected time in milliseconds.
      */
     private void pickDateTime(MillisCallback cb) {
         Calendar cal = Calendar.getInstance();
@@ -173,7 +191,7 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * pick period
+     * Orchestrates picking the start and end of the registration period.
      */
     private void pickRegistrationPeriod() {
         pickDateTime(startMillis -> pickDateTime(endMillis -> {
@@ -184,8 +202,8 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * upload poster
-     * @param localUri
+     * Uploads the selected image as the event poster.
+     * @param localUri URI of the local image file.
      */
     private void uploadPoster(Uri localUri) {
         service.uploadPoster(eventId, localUri, new RepoCallback<String>() {
@@ -204,6 +222,9 @@ public class EventBuilderFragment extends Fragment {
         });
     }
 
+    /**
+     * Collects data from UI fields and saves the event to Firestore.
+     */
     private void saveEvent() {
         String currentUserId = FirebaseAuth.getInstance().getUid();
         if (currentUserId == null) {
@@ -239,6 +260,11 @@ public class EventBuilderFragment extends Fragment {
         eventData.put("name", etEventName.getText().toString());
         eventData.put("organizer", etOrganizer.getText().toString());
         eventData.put("organizerId", currentUserId);
+        
+        if (coOrganizerId != null) {
+            eventData.put("coOrganizerIds", FieldValue.arrayUnion(coOrganizerId));
+        }
+        
         eventData.put("description", etDescription.getText().toString());
         eventData.put("location", finalLocation);
         eventData.put("placeId", finalPlaceId);
@@ -252,13 +278,11 @@ public class EventBuilderFragment extends Fragment {
         eventData.put("waitlistCount", 0);
         eventData.put("isPrivate", cbIsPrivate.isChecked());
         
-        // Arrays for entrant tracking
         eventData.put("waitlistedEntrantIds", new ArrayList<String>());
-        eventData.put("pendingEntrantIds", new ArrayList<String>()); // For Pending list
-        eventData.put("registeredEntrantIds", new ArrayList<String>()); // For Final list
-        eventData.put("cancelledEntrantIds", new ArrayList<String>()); // For Cancelled list
+        eventData.put("pendingEntrantIds", new ArrayList<String>());
+        eventData.put("registeredEntrantIds", new ArrayList<String>());
+        eventData.put("cancelledEntrantIds", new ArrayList<String>());
         
-        // Handle numerical fields
         try {
             String capacityStr = etCapacity.getText().toString();
             eventData.put("totalSpots", capacityStr.isEmpty() ? 0 : Integer.parseInt(capacityStr));
@@ -286,7 +310,7 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * render
+     * Loads existing event data if editing an event.
      */
     private void loadAndRender() {
         repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
@@ -302,6 +326,11 @@ public class EventBuilderFragment extends Fragment {
                 posterUrl = result.getString("posterUri");
                 startTimestamp = result.getTimestamp("registrationStart");
                 endTimestamp = result.getTimestamp("registrationEnd");
+
+                List<String> coOrganizerIds = (List<String>) result.get("coOrganizerIds");
+                if (coOrganizerIds != null && !coOrganizerIds.isEmpty()) {
+                    coOrganizerId = coOrganizerIds.get(0);
+                }
 
                 if (posterUrl != null && !posterUrl.isEmpty()) {
                     Glide.with(requireContext()).load(posterUrl).into(ivPosterPreview);
@@ -322,6 +351,14 @@ public class EventBuilderFragment extends Fragment {
                 selectedEventLat = result.getDouble("eventLatitude");
                 selectedEventLon = result.getDouble("eventLongitude");
 
+                if (coOrganizerId != null) {
+                    FirebaseFirestore.getInstance().collection("users").document(coOrganizerId)
+                            .get().addOnSuccessListener(userDoc -> {
+                                if (isAdded() && userDoc.exists()) {
+                                    tvCoOrganizerName.setText(userDoc.getString("name"));
+                                }
+                            });
+                }
             }
             @Override
             public void onError(Exception e) {
@@ -332,10 +369,10 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * formate period to yyyy-MM-dd, HH:mm not displayed considering content width
-     * @param start
-     * @param end
-     * @return
+     * Formats a start and end timestamp into a human-readable date range string.
+     * @param start Start timestamp.
+     * @param end End timestamp.
+     * @return Formatted date range string.
      */
     private String formatPeriod(Timestamp start, Timestamp end) {
         if (start == null || end == null) return "Unset";
@@ -344,10 +381,10 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * init google places service
+     * Initializes the Google Places client.
      */
     private void initPlacesClient() {
-        String apikey = "YOUR_APIKEY"; //BuildConfig.PLACES_API_KEY;
+        String apikey = "YOUR_APIKEY";
 
         if (TextUtils.isEmpty(apikey)) {
             Toast.makeText(requireContext(), "Places API key is not configured", Toast.LENGTH_SHORT).show();
@@ -362,7 +399,7 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * configure etLocation for correct interaction
+     * Configures the location EditText to launch the Places Autocomplete UI.
      */
     private void configureLocationPicker() {
         etLocation.setFocusable(false);
@@ -374,7 +411,7 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * launch placeAutocomplete
+     * Launches the Google Places Autocomplete intent.
      */
     private void launchPlaceAutocomplete() {
         if (placesClient == null) {
@@ -393,9 +430,9 @@ public class EventBuilderFragment extends Fragment {
     }
 
     /**
-     * fetch details for selected
-     * @param placeId
-     * @param sessionToken
+     * Fetches detailed information for a selected place from Google Places.
+     * @param placeId The ID of the selected place.
+     * @param sessionToken The current autocomplete session token.
      */
     private void fetchSelectedPlaceDetails(String placeId, AutocompleteSessionToken sessionToken) {
         List<Place.Field> fields = Arrays.asList(

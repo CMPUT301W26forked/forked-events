@@ -168,6 +168,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Organizer Name" />
+
+            <TextView
+                android:id="@+id/tvCoOrganizerLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Co-organizers"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvCoOrganizers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Co-organizer Names"
+                android:visibility="gone" />
         </LinearLayout>
 
         <LinearLayout

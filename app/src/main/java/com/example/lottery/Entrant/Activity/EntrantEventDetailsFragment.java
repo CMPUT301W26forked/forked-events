@@ -30,6 +30,8 @@ import com.example.lottery.R;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
@@ -118,6 +120,8 @@ public class EntrantEventDetailsFragment extends Fragment {
         TextView tvEventDates = view.findViewById(R.id.tvEventDates);
         TextView tvLocation = view.findViewById(R.id.tvLocation);
         TextView tvOrganizer = view.findViewById(R.id.tvOrganizer);
+        TextView tvCoOrganizerLabel = view.findViewById(R.id.tvCoOrganizerLabel);
+        TextView tvCoOrganizers = view.findViewById(R.id.tvCoOrganizers);
         ImageView ivEventPoster = view.findViewById(R.id.ivEventPoster);
 
         rvComments = view.findViewById(R.id.rvComments);
@@ -179,6 +183,7 @@ public class EntrantEventDetailsFragment extends Fragment {
         loadEventDetails(tvEventName, tvDescription, tvStatusTag,
                 tvTotalSpots, tvWaitlist, tvConfirmed,
                 tvEventDates, tvLocation, tvOrganizer,
+                tvCoOrganizerLabel, tvCoOrganizers,
                 ivEventPoster, btnJoin);
 
         loadComments();
@@ -214,6 +219,9 @@ public class EntrantEventDetailsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Loads and listens for comments on the current event.
+     */
     private void loadComments() {
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
@@ -331,6 +339,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Builds a nested list of comments for display in the RecyclerView.
+     * @param allComments Flat list of all comments.
+     * @return Nested list of comments with depth information.
+     */
     private List<Comment> buildNestedDisplayList(List<Comment> allComments) {
         List<Comment> displayList = new ArrayList<>();
         Map<String, List<Comment>> childrenMap = new HashMap<>();
@@ -355,6 +368,13 @@ public class EntrantEventDetailsFragment extends Fragment {
         return displayList;
     }
 
+    /**
+     * Recursively adds replies to the display list.
+     * @param parent The parent comment.
+     * @param childrenMap Map of parent IDs to lists of child comments.
+     * @param displayList The list being built for display.
+     * @param depth Current nesting depth.
+     */
     private void addRepliesRecursive(Comment parent,
                                      Map<String, List<Comment>> childrenMap,
                                      List<Comment> displayList,
@@ -371,6 +391,9 @@ public class EntrantEventDetailsFragment extends Fragment {
         }
     }
 
+    /**
+     * Posts a new comment or reply to Firestore.
+     */
     private void postComment() {
         String commentText = etComment.getText() != null
                 ? etComment.getText().toString().trim()
@@ -449,6 +472,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                         Toast.makeText(getContext(), "Failed to get user info", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Toggles a reaction (like, love, fire) on a comment.
+     * @param comment The comment to react to.
+     * @param reactionType The type of reaction.
+     */
     private void toggleReaction(Comment comment, String reactionType) {
         if (comment == null || comment.getCommentId() == null || eventId == null || entrantId == null) {
             return;
@@ -487,16 +515,20 @@ public class EntrantEventDetailsFragment extends Fragment {
 
                     if (!reactions.containsKey("like")) reactions.put("like", new ArrayList<>());
                     if (!reactions.containsKey("love")) reactions.put("love", new ArrayList<>());
-                    if (!reactions.containsKey("helpful")) reactions.put("helpful", new ArrayList<>());
+                    if (!reactions.containsKey("fire")) reactions.put("fire", new ArrayList<>());
 
-                    boolean alreadyReactedToSame = reactions.get(reactionType).contains(entrantId);
+                    List<String> reactionUsers = reactions.get(reactionType);
+                    boolean alreadyReactedToSame = reactionUsers != null && reactionUsers.contains(entrantId);
 
                     for (List<String> users : reactions.values()) {
                         users.remove(entrantId);
                     }
 
                     if (!alreadyReactedToSame) {
-                        reactions.get(reactionType).add(entrantId);
+                        List<String> targetList = reactions.get(reactionType);
+                        if (targetList != null) {
+                            targetList.add(entrantId);
+                        }
                     }
 
                     db.collection("events")
@@ -511,17 +543,25 @@ public class EntrantEventDetailsFragment extends Fragment {
                         Toast.makeText(getContext(), "Failed to update reaction", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Clears the current reply mode.
+     */
     private void clearReplyMode() {
         selectedReplyComment = null;
         etComment.setHint("Write a comment");
         etComment.setError(null);
     }
 
+    /**
+     * Loads event details from Firestore and updates the UI.
+     * Also handles visibility of joining and QR buttons based on user roles and event privacy.
+     */
     private void loadEventDetails(TextView tvEventName, TextView tvDescription,
                                   TextView tvStatusTag, TextView tvTotalSpots,
                                   TextView tvWaitlist, TextView tvConfirmed,
                                   TextView tvEventDates, TextView tvLocation,
                                   TextView tvOrganizer,
+                                  TextView tvCoOrganizerLabel, TextView tvCoOrganizers,
                                   ImageView ivEventPoster, MaterialButton btnJoin) {
         if (eventId == null) {
             Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
@@ -576,6 +616,56 @@ public class EntrantEventDetailsFragment extends Fragment {
                                 .into(ivEventPoster);
                     }
 
+                    // Handle co-organizers display
+                    List<String> coOrganizerIds = (List<String>) doc.get("coOrganizerIds");
+                    if (coOrganizerIds != null && !coOrganizerIds.isEmpty()) {
+                        List<Task<DocumentSnapshot>> tasks = new ArrayList<>();
+                        for (String id : coOrganizerIds) {
+                            tasks.add(db.collection("users").document(id).get());
+                        }
+                        Tasks.whenAllComplete(tasks).addOnCompleteListener(t -> {
+                            List<String> usernames = new ArrayList<>();
+                            for (Task<DocumentSnapshot> task : tasks) {
+                                if (task.isSuccessful() && task.getResult().exists()) {
+                                    String username = task.getResult().getString("username");
+                                    if (username == null || username.trim().isEmpty()) {
+                                        username = task.getResult().getString("name");
+                                    }
+                                    if (username != null) usernames.add(username);
+                                }
+                            }
+                            if (!usernames.isEmpty()) {
+                                tvCoOrganizerLabel.setVisibility(View.VISIBLE);
+                                tvCoOrganizers.setVisibility(View.VISIBLE);
+                                tvCoOrganizers.setText(String.join(", ", usernames));
+                                
+                                // Update label to singular if there's only one
+                                if (usernames.size() == 1) {
+                                    tvCoOrganizerLabel.setText("Co-organizer");
+                                } else {
+                                    tvCoOrganizerLabel.setText("Co-organizers");
+                                }
+                            }
+                        });
+                    } else {
+                        tvCoOrganizerLabel.setVisibility(View.GONE);
+                        tvCoOrganizers.setVisibility(View.GONE);
+                    }
+
+                    // Check if current user is an organizer or co-organizer
+                    boolean isOrganizer = entrantId.equals(organizerId);
+                    boolean isCoOrganizer = coOrganizerIds != null && coOrganizerIds.contains(entrantId);
+
+                    if (isOrganizer || isCoOrganizer) {
+                        btnJoin.setVisibility(View.GONE);
+                        // No need for further join/waitlist logic if they are organizers
+                        if (btnShowQr != null) {
+                            Boolean isPrivate = doc.getBoolean("isPrivate");
+                            btnShowQr.setVisibility((isPrivate != null && isPrivate) ? View.GONE : View.VISIBLE);
+                        }
+                        return;
+                    }
+
                     // Hide QR button for private events
                     Boolean isPrivate = doc.getBoolean("isPrivate");
                     if (isPrivate != null && isPrivate) {
@@ -613,6 +703,10 @@ public class EntrantEventDetailsFragment extends Fragment {
                 );
     }
 
+    /**
+     * Initiates the process to join the waitlist.
+     * @param btnJoin The join button UI element.
+     */
     private void joinWaitlist(MaterialButton btnJoin) {
         if (!"Open".equalsIgnoreCase(eventStatus)) {
             Toast.makeText(getContext(), "Registration is closed.", Toast.LENGTH_SHORT).show();
@@ -637,6 +731,10 @@ public class EntrantEventDetailsFragment extends Fragment {
         });
     }
 
+    /**
+     * Resolves the current user's name for waitlist registration.
+     * @param cb Callback with the resolved name.
+     */
     private void resolveEntrantName(EntrantNameCallBack cb) {
         db.collection("users")
                 .document(entrantId)
@@ -657,6 +755,11 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .addOnFailureListener(e -> cb.onResult("Anonymous user"));
     }
 
+    /**
+     * Shows a dialog asking the user if they want to share their location.
+     * @param btnJoin The join button UI element.
+     * @param entrantName The resolved name of the entrant.
+     */
     private void showLocationChoiceDialog(MaterialButton btnJoin, String entrantName) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Use current location?")
@@ -673,6 +776,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Requests location permissions if not already granted.
+     */
     private void requestLocationForWaitlistJoin() {
         if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -683,6 +789,9 @@ public class EntrantEventDetailsFragment extends Fragment {
         locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION);
     }
 
+    /**
+     * Fetches current location and proceeds to finalize join.
+     */
     @SuppressLint("MissingPermission")
     private void fetchCurrentLocationAndJoin() {
         fusedLocationProviderClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
@@ -696,6 +805,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .addOnFailureListener(e -> tryLastKnownLocation());
     }
 
+    /**
+     * Attempts to fetch the last known location if current location fetch fails.
+     */
     @SuppressLint("MissingPermission")
     private void tryLastKnownLocation() {
         fusedLocationProviderClient.getLastLocation()
@@ -709,6 +821,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .addOnFailureListener(e -> fallbackToJoinWithoutLocation("Could not fetch your location"));
     }
 
+    /**
+     * Completes the join process with provided location data.
+     */
     private void completePendingJoinWithLocation(Double latitude, Double longitude) {
         MaterialButton joinButton = pendingJoinButton;
         String entrantName = pendingEntrantName;
@@ -719,10 +834,16 @@ public class EntrantEventDetailsFragment extends Fragment {
         finalizeWaitlistJoin(joinButton, entrantName, latitude, longitude);
     }
 
+    /**
+     * Fallback to join without location.
+     */
     private void fallbackToJoinWithoutLocation() {
         fallbackToJoinWithoutLocation(null);
     }
 
+    /**
+     * Fallback to join without location with an optional toast message.
+     */
     private void fallbackToJoinWithoutLocation(String message) {
         MaterialButton joinButton = pendingJoinButton;
         String entrantName = pendingEntrantName;
@@ -737,11 +858,17 @@ public class EntrantEventDetailsFragment extends Fragment {
         }
     }
 
+    /**
+     * Clears pending state for joining waitlist.
+     */
     private void clearPendingJoinState() {
         pendingEntrantName = null;
         pendingJoinButton = null;
     }
 
+    /**
+     * Finalizes the waitlist join by updating Firestore.
+     */
     private void finalizeWaitlistJoin(MaterialButton btnJoin, String entrantName,
                                       Double latitude, Double longitude) {
         entrantService.signUpForEvent(entrantId, eventId);
@@ -768,6 +895,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Writes waitlist entry data to the database.
+     */
     private void writeWaitlistEntry(MaterialButton btnJoin, String entrantName,
                                     Double latitude, Double longitude, String partialWarning) {
         waitlistService.joinWaitList(eventId, entrantId, entrantName, latitude, longitude,
@@ -795,6 +925,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Creates a local notification entry in Firestore when joining a waitlist.
+     */
     private void createWaitlistNotification() {
         Map<String, Object> notification = new HashMap<>();
         notification.put("eventId", eventId);
@@ -810,6 +943,10 @@ public class EntrantEventDetailsFragment extends Fragment {
                 .add(notification);
     }
 
+    /**
+     * Removes the current user from the waitlist in Firestore.
+     * @param btnJoin The join button UI element.
+     */
     private void leaveWaitlist(MaterialButton btnJoin) {
         btnJoin.setEnabled(false);
 
@@ -835,6 +972,9 @@ public class EntrantEventDetailsFragment extends Fragment {
                 });
     }
 
+    /**
+     * Removes waitlist map entry data from the database.
+     */
     private void removeWaitlistEntry(MaterialButton btnJoin, String baseMessage) {
         waitlistService.leaveWaitList(eventId, entrantId, new WaitlistCallback<Void>() {
             @Override
@@ -857,11 +997,17 @@ public class EntrantEventDetailsFragment extends Fragment {
         });
     }
 
+    /**
+     * Sets the join waitlist button style.
+     */
     private void setJoinWaitlistStyle(MaterialButton btn) {
         btn.setText("Join Waitlist");
         btn.setBackgroundTintList(ColorStateList.valueOf(0x7ab531));
     }
 
+    /**
+     * Sets the leave waitlist button style.
+     */
     private void setLeaveWaitlistStyle(MaterialButton btn) {
         btn.setText("Leave Waitlist");
         btn.setBackgroundTintList(ColorStateList.valueOf(
@@ -869,6 +1015,9 @@ public class EntrantEventDetailsFragment extends Fragment {
         ));
     }
 
+    /**
+     * Shows a dialog asking the user if they want to stay in the waitlist after not being selected.
+     */
     public void showStayInList(MaterialButton btnJoin) {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Not Selected")
