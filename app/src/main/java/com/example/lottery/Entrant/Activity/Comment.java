@@ -3,7 +3,9 @@ package com.example.lottery.Entrant.Activity;
 import com.google.firebase.Timestamp;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Comment {
     private String commentId;
@@ -19,9 +21,12 @@ public class Comment {
 
     private int depth;
 
+    private Map<String, List<String>> reactions;
+
     public Comment() {
         this.mentionedUserNames = new ArrayList<>();
         this.depth = 0;
+        this.reactions = new HashMap<>();
     }
 
     public Comment(String userId, String userName, String text, Timestamp timestamp) {
@@ -31,6 +36,7 @@ public class Comment {
         this.timestamp = timestamp;
         this.mentionedUserNames = new ArrayList<>();
         this.depth = 0;
+        this.reactions = new HashMap<>();
     }
 
     public Comment(String commentId,
@@ -52,6 +58,7 @@ public class Comment {
         this.replyToAuthorName = replyToAuthorName;
         this.mentionedUserNames = mentionedUserNames != null ? mentionedUserNames : new ArrayList<>();
         this.depth = 0;
+        this.reactions = new HashMap<>();
     }
 
     public String getCommentId() {
@@ -94,6 +101,10 @@ public class Comment {
         return depth;
     }
 
+    public Map<String, List<String>> getReactions() {
+        return reactions;
+    }
+
     public void setCommentId(String commentId) {
         this.commentId = commentId;
     }
@@ -132,6 +143,10 @@ public class Comment {
 
     public void setDepth(int depth) {
         this.depth = depth;
+    }
+
+    public void setReactions(Map<String, List<String>> reactions) {
+        this.reactions = reactions != null ? reactions : new HashMap<>();
     }
 
     public boolean isReply() {

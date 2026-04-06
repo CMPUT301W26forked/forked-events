@@ -1,22 +1,18 @@
 package com.example.lottery.admin;
 
 import android.app.AlertDialog;
-import android.content.res.ColorStateList;
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -25,25 +21,16 @@ import com.bumptech.glide.Glide;
 import com.example.lottery.Common.Utils.DeviceManager;
 import com.example.lottery.Entrant.Activity.Comment;
 import com.example.lottery.Entrant.Activity.CommentsAdapter;
-import com.example.lottery.Entrant.Activity.QrDisplayFragment;
-import com.example.lottery.Entrant.Repo.WaitlistCallback;
-import com.example.lottery.Entrant.Service.EntrantService;
-import com.example.lottery.Entrant.Service.WaitlistService;
 import com.example.lottery.R;
 import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.RepoCallback;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.Query;
-
-import org.w3c.dom.Text;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -53,9 +40,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * event detail for admin moderation
- */
 public class AdminEventModerationDetailFragment extends Fragment {
     private String eventId;
     private String eventName;
@@ -68,6 +52,7 @@ public class AdminEventModerationDetailFragment extends Fragment {
     private LinearLayout adminActions;
     private MaterialButton btnToggleActions;
     private ListenerRegistration commentsListener;
+    private String currentUserId;
 
     public static AdminEventModerationDetailFragment newInstance(String eventId) {
         AdminEventModerationDetailFragment fragment = new AdminEventModerationDetailFragment();
@@ -90,6 +75,13 @@ public class AdminEventModerationDetailFragment extends Fragment {
 
         db = FirebaseFirestore.getInstance();
 
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            currentUserId = currentUser.getUid();
+        } else {
+            currentUserId = DeviceManager.getDeviceId(requireContext());
+        }
+
         MaterialButton btnBack = view.findViewById(R.id.btnBack);
         TextView tvEventName = view.findViewById(R.id.tvEventName);
         TextView tvDescription = view.findViewById(R.id.tvDescription);
@@ -106,7 +98,17 @@ public class AdminEventModerationDetailFragment extends Fragment {
         rvComments = view.findViewById(R.id.rvComments);
 
         commentList = new ArrayList<>();
-        commentsAdapter = new CommentsAdapter(commentList, null);
+        commentsAdapter = new CommentsAdapter(
+                commentList,
+                currentUserId,
+                comment -> {
+                    // Admin view is read-only for replies
+                },
+                (comment, reactionType) -> {
+                    // Admin view is read-only for reactions
+                }
+        );
+
         rvComments.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvComments.setAdapter(commentsAdapter);
 
@@ -118,9 +120,10 @@ public class AdminEventModerationDetailFragment extends Fragment {
         loadComments();
 
         btnBack.setOnClickListener(v -> getParentFragmentManager().popBackStack());
+
         btnToggleActions.setOnClickListener(v -> {
             boolean expanded = adminActions.getVisibility() == View.VISIBLE;
-            adminActions.setVisibility(expanded ? View.GONE: View.VISIBLE);
+            adminActions.setVisibility(expanded ? View.GONE : View.VISIBLE);
             btnToggleActions.setText(expanded ? "Admin Actions" : "Hide Actions");
         });
 
@@ -131,59 +134,48 @@ public class AdminEventModerationDetailFragment extends Fragment {
             }
 
             getParentFragmentManager().beginTransaction()
-                    .replace(R.id.adminFragmentContainer, AdminRemoveOrganizerFragment.newInstance(organizerId, organizerName))
+                    .replace(R.id.adminFragmentContainer,
+                            AdminRemoveOrganizerFragment.newInstance(organizerId, organizerName))
                     .addToBackStack(null)
                     .commit();
         });
 
-        view.findViewById(R.id.btnRemoveEvent).setOnClickListener(v->{
+        view.findViewById(R.id.btnRemoveEvent).setOnClickListener(v -> {
             new AlertDialog.Builder(requireContext())
                     .setTitle("Delete Event")
-                    .setMessage("Are you sure you want to delete "+eventName+"?")
-                    .setPositiveButton("Delete", (dialog,which) -> {
-                FSEventRepo repo = new FSEventRepo();
-                repo.deleteEvent(eventId, new RepoCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        Toast.makeText(getContext(), "Event deleted!", Toast.LENGTH_SHORT).show();
-                        getParentFragmentManager().popBackStack();
-                    }
-                    @Override
-                    public void onError(Exception e) {
-                        Toast.makeText(getContext(), "Failed to delete event.", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            })
+                    .setMessage("Are you sure you want to delete " + eventName + "?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        FSEventRepo repo = new FSEventRepo();
+                        repo.deleteEvent(eventId, new RepoCallback<Void>() {
+                            @Override
+                            public void onSuccess(Void result) {
+                                Toast.makeText(getContext(), "Event deleted!", Toast.LENGTH_SHORT).show();
+                                getParentFragmentManager().popBackStack();
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                Toast.makeText(getContext(), "Failed to delete event.", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    })
                     .setNegativeButton("Cancel", null)
                     .show();
         });
-
 
         setupEditableFields(tvEventName, tvDescription, tvStatusTag, tvLocation);
 
         return view;
     }
 
-    /**
-     * show edit info
-     * @param tvEventName
-     * @param tvDescription
-     * @param tvStatusTag
-     * @param tvLocation
-     */
-    private void setupEditableFields(TextView tvEventName, TextView tvDescription, TextView tvStatusTag, TextView tvLocation) {
+    private void setupEditableFields(TextView tvEventName, TextView tvDescription,
+                                     TextView tvStatusTag, TextView tvLocation) {
         tvEventName.setOnClickListener(v -> showEditDialog("Edit Event Name", "name", tvEventName));
         tvDescription.setOnClickListener(v -> showEditDialog("Edit Description", "description", tvDescription));
         tvStatusTag.setOnClickListener(v -> showEditDialog("Edit Status", "status", tvStatusTag));
         tvLocation.setOnClickListener(v -> showEditDialog("Edit Location", "location", tvLocation));
     }
 
-    /**
-     * show dialog for event info edit
-     * @param title
-     * @param fieldName
-     * @param targetView
-     */
     private void showEditDialog(String title, String fieldName, TextView targetView) {
         EditText input = new EditText(requireContext());
         input.setText(targetView.getText());
@@ -206,17 +198,13 @@ public class AdminEventModerationDetailFragment extends Fragment {
                                 targetView.setText(newVal);
                                 Toast.makeText(requireContext(), "Updated", Toast.LENGTH_SHORT).show();
                             })
-                            .addOnFailureListener(e -> {
-                                Toast.makeText(getContext(), "Update failed", Toast.LENGTH_SHORT).show();
-                            });
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(getContext(), "Update failed", Toast.LENGTH_SHORT).show());
                 })
-                .setNegativeButton("Cancell", null)
+                .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    /**
-     * load comment
-     */
     private void loadComments() {
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
@@ -226,45 +214,154 @@ public class AdminEventModerationDetailFragment extends Fragment {
         commentsListener = db.collection("events")
                 .document(eventId)
                 .collection("comments")
-                .orderBy("timestamp", Query.Direction.ASCENDING)
                 .addSnapshotListener((value, error) -> {
                     if (error != null) {
                         Toast.makeText(getContext(), "Failed to load comments", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    commentList.clear();
+                    List<Comment> allComments = new ArrayList<>();
 
                     if (value != null) {
                         for (DocumentSnapshot doc : value.getDocuments()) {
-                            Comment comment = doc.toObject(Comment.class);
-                            if (comment != null) {
-                                commentList.add(comment);
+                            Comment comment = new Comment();
+
+                            comment.setCommentId(doc.getId());
+
+                            String userId = doc.getString("userId");
+                            if (userId == null || userId.trim().isEmpty()) {
+                                userId = doc.getString("entrantId");
                             }
+                            comment.setUserId(userId);
+
+                            String userName = doc.getString("userName");
+                            if (userName == null || userName.trim().isEmpty()) {
+                                userName = doc.getString("authorName");
+                            }
+                            if (userName == null || userName.trim().isEmpty()) {
+                                userName = doc.getString("name");
+                            }
+                            if (userName == null || userName.trim().isEmpty()) {
+                                userName = "Unknown User";
+                            }
+                            comment.setUserName(userName);
+
+                            String text = doc.getString("text");
+                            if (text == null || text.trim().isEmpty()) {
+                                text = doc.getString("comment");
+                            }
+                            if (text == null || text.trim().isEmpty()) {
+                                text = "(empty comment)";
+                            }
+                            comment.setText(text);
+
+                            Timestamp timestamp = doc.getTimestamp("timestamp");
+                            if (timestamp == null) {
+                                timestamp = doc.getTimestamp("createdAt");
+                            }
+                            comment.setTimestamp(timestamp);
+
+                            comment.setParentCommentId(doc.getString("parentCommentId"));
+                            comment.setReplyToEntrantId(doc.getString("replyToEntrantId"));
+                            comment.setReplyToAuthorName(doc.getString("replyToAuthorName"));
+
+                            Object mentioned = doc.get("mentionedUserNames");
+                            if (mentioned instanceof List) {
+                                comment.setMentionedUserNames((List<String>) mentioned);
+                            }
+
+                            Object reactionsObj = doc.get("reactions");
+                            if (reactionsObj instanceof Map) {
+                                Map<String, List<String>> reactions = new HashMap<>();
+                                Map<?, ?> rawMap = (Map<?, ?>) reactionsObj;
+
+                                for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                                    String key = String.valueOf(entry.getKey());
+                                    List<String> userIds = new ArrayList<>();
+
+                                    if (entry.getValue() instanceof List) {
+                                        List<?> rawList = (List<?>) entry.getValue();
+                                        for (Object item : rawList) {
+                                            if (item != null) {
+                                                userIds.add(String.valueOf(item));
+                                            }
+                                        }
+                                    }
+
+                                    reactions.put(key, userIds);
+                                }
+
+                                comment.setReactions(reactions);
+                            } else {
+                                comment.setReactions(new HashMap<>());
+                            }
+
+                            allComments.add(comment);
                         }
                     }
 
+                    allComments.sort((c1, c2) -> {
+                        Timestamp t1 = c1.getTimestamp();
+                        Timestamp t2 = c2.getTimestamp();
+
+                        if (t1 == null && t2 == null) return 0;
+                        if (t1 == null) return -1;
+                        if (t2 == null) return 1;
+                        return t1.compareTo(t2);
+                    });
+
+                    List<Comment> nestedComments = buildNestedDisplayList(allComments);
+
+                    commentList.clear();
+                    commentList.addAll(nestedComments);
                     commentsAdapter.notifyDataSetChanged();
 
                     if (!commentList.isEmpty()) {
-                        rvComments.scrollToPosition(commentList.size() - 1);
+                        rvComments.scrollToPosition(0);
                     }
                 });
     }
 
-    /**
-     * load event detail
-     * @param tvEventName
-     * @param tvDescription
-     * @param tvStatusTag
-     * @param tvTotalSpots
-     * @param tvWaitlist
-     * @param tvConfirmed
-     * @param tvEventDates
-     * @param tvLocation
-     * @param tvOrganizer
-     * @param ivEventPoster
-     */
+    private List<Comment> buildNestedDisplayList(List<Comment> allComments) {
+        List<Comment> displayList = new ArrayList<>();
+        Map<String, List<Comment>> childrenMap = new HashMap<>();
+        List<Comment> parentComments = new ArrayList<>();
+
+        for (Comment comment : allComments) {
+            String parentId = comment.getParentCommentId();
+
+            if (parentId == null || parentId.trim().isEmpty()) {
+                parentComments.add(comment);
+            } else {
+                childrenMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(comment);
+            }
+        }
+
+        for (Comment parent : parentComments) {
+            parent.setDepth(0);
+            displayList.add(parent);
+            addRepliesRecursive(parent, childrenMap, displayList, 1);
+        }
+
+        return displayList;
+    }
+
+    private void addRepliesRecursive(Comment parent,
+                                     Map<String, List<Comment>> childrenMap,
+                                     List<Comment> displayList,
+                                     int depth) {
+        if (parent.getCommentId() == null) return;
+
+        List<Comment> replies = childrenMap.get(parent.getCommentId());
+        if (replies == null) return;
+
+        for (Comment reply : replies) {
+            reply.setDepth(depth);
+            displayList.add(reply);
+            addRepliesRecursive(reply, childrenMap, displayList, depth + 1);
+        }
+    }
+
     private void loadEventDetails(TextView tvEventName, TextView tvDescription,
                                   TextView tvStatusTag, TextView tvTotalSpots,
                                   TextView tvWaitlist, TextView tvConfirmed,
@@ -321,13 +418,9 @@ public class AdminEventModerationDetailFragment extends Fragment {
                     }
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(getContext(), "Failed to load event details", Toast.LENGTH_SHORT).show()
-                );
+                        Toast.makeText(getContext(), "Failed to load event details", Toast.LENGTH_SHORT).show());
     }
 
-    /**
-     * listener removal
-     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();
@@ -336,8 +429,4 @@ public class AdminEventModerationDetailFragment extends Fragment {
             commentsListener = null;
         }
     }
-
-
-
-
 }

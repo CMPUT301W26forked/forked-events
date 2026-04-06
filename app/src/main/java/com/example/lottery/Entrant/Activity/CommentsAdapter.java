@@ -13,6 +13,7 @@ import com.example.lottery.R;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.CommentViewHolder> {
 
@@ -20,13 +21,24 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         void onReplyClick(Comment comment);
     }
 
+    public interface OnReactionClickListener {
+        void onReactionClick(Comment comment, String reactionType);
+    }
+
     private final List<Comment> commentList;
     private String organizerId;
     private final OnReplyClickListener replyClickListener;
+    private final OnReactionClickListener reactionClickListener;
+    private final String currentUserId;
 
-    public CommentsAdapter(List<Comment> commentList, OnReplyClickListener replyClickListener) {
+    public CommentsAdapter(List<Comment> commentList,
+                           String currentUserId,
+                           OnReplyClickListener replyClickListener,
+                           OnReactionClickListener reactionClickListener) {
         this.commentList = commentList;
+        this.currentUserId = currentUserId;
         this.replyClickListener = replyClickListener;
+        this.reactionClickListener = reactionClickListener;
     }
 
     public void setOrganizerId(String organizerId) {
@@ -88,6 +100,36 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
                 replyClickListener.onReplyClick(comment);
             }
         });
+
+        int likeCount = getReactionCount(comment, "like");
+        int loveCount = getReactionCount(comment, "love");
+        int helpfulCount = getReactionCount(comment, "helpful");
+
+        holder.tvLikeReaction.setText("👍 " + likeCount);
+        holder.tvLoveReaction.setText("❤️ " + loveCount);
+        holder.tvHelpfulReaction.setText("🔥 " + helpfulCount);
+
+        holder.tvLikeReaction.setAlpha(hasUserReacted(comment, "like") ? 1.0f : 0.5f);
+        holder.tvLoveReaction.setAlpha(hasUserReacted(comment, "love") ? 1.0f : 0.5f);
+        holder.tvHelpfulReaction.setAlpha(hasUserReacted(comment, "helpful") ? 1.0f : 0.5f);
+
+        holder.tvLikeReaction.setOnClickListener(v -> {
+            if (reactionClickListener != null) {
+                reactionClickListener.onReactionClick(comment, "like");
+            }
+        });
+
+        holder.tvLoveReaction.setOnClickListener(v -> {
+            if (reactionClickListener != null) {
+                reactionClickListener.onReactionClick(comment, "love");
+            }
+        });
+
+        holder.tvHelpfulReaction.setOnClickListener(v -> {
+            if (reactionClickListener != null) {
+                reactionClickListener.onReactionClick(comment, "helpful");
+            }
+        });
     }
 
     @Override
@@ -100,6 +142,24 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         return Math.round(dp * density);
     }
 
+    private int getReactionCount(Comment comment, String reactionType) {
+        if (comment.getReactions() == null) return 0;
+
+        Map<String, List<String>> reactions = comment.getReactions();
+        List<String> users = reactions.get(reactionType);
+
+        return users == null ? 0 : users.size();
+    }
+
+    private boolean hasUserReacted(Comment comment, String reactionType) {
+        if (currentUserId == null || comment.getReactions() == null) return false;
+
+        Map<String, List<String>> reactions = comment.getReactions();
+        List<String> users = reactions.get(reactionType);
+
+        return users != null && users.contains(currentUserId);
+    }
+
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         View commentContentContainer;
         TextView tvCommentUser;
@@ -108,6 +168,10 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         TextView tvOrganizerBadge;
         TextView tvReplyInfo;
         TextView btnReply;
+
+        TextView tvLikeReaction;
+        TextView tvLoveReaction;
+        TextView tvHelpfulReaction;
 
         public CommentViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -118,6 +182,10 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
             tvOrganizerBadge = itemView.findViewById(R.id.tvOrganizerBadge);
             tvReplyInfo = itemView.findViewById(R.id.tvReplyInfo);
             btnReply = itemView.findViewById(R.id.btnReply);
+
+            tvLikeReaction = itemView.findViewById(R.id.tvLikeReaction);
+            tvLoveReaction = itemView.findViewById(R.id.tvLoveReaction);
+            tvHelpfulReaction = itemView.findViewById(R.id.tvHelpfulReaction);
         }
     }
 }

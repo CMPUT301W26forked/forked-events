@@ -71,7 +71,6 @@ public class EntrantEventDetailsFragment extends Fragment {
     private MaterialButton pendingJoinButton;
     private String pendingEntrantName;
 
-    // NEW: keeps track of which comment is being replied to
     private Comment selectedReplyComment = null;
 
     public EntrantEventDetailsFragment() {
@@ -118,41 +117,45 @@ public class EntrantEventDetailsFragment extends Fragment {
 
         commentList = new ArrayList<>();
 
-        commentsAdapter = new CommentsAdapter(commentList, comment -> {
-            // tap Reply on same comment again to cancel reply mode
-            if (selectedReplyComment != null
-                    && selectedReplyComment.getCommentId() != null
-                    && selectedReplyComment.getCommentId().equals(comment.getCommentId())) {
-                clearReplyMode();
-                Toast.makeText(getContext(), "Reply cancelled", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            selectedReplyComment = comment;
-
-            String replyName = comment.getUserName();
-            if (replyName == null || replyName.trim().isEmpty()) {
-                replyName = "user";
-            }
-
-            etComment.setHint("Replying to @" + replyName);
-            etComment.requestFocus();
-            etComment.setSelection(etComment.getText() != null ? etComment.getText().length() : 0);
-
-            Toast.makeText(getContext(),
-                    "Replying to @" + replyName + ". Tap Reply again to cancel.",
-                    Toast.LENGTH_SHORT).show();
-        });
-
-        rvComments.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvComments.setAdapter(commentsAdapter);
-
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             entrantId = currentUser.getUid();
         } else {
             entrantId = DeviceManager.getDeviceId(requireContext());
         }
+
+        commentsAdapter = new CommentsAdapter(
+                commentList,
+                entrantId,
+                comment -> {
+                    if (selectedReplyComment != null
+                            && selectedReplyComment.getCommentId() != null
+                            && selectedReplyComment.getCommentId().equals(comment.getCommentId())) {
+                        clearReplyMode();
+                        Toast.makeText(getContext(), "Reply cancelled", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    selectedReplyComment = comment;
+
+                    String replyName = comment.getUserName();
+                    if (replyName == null || replyName.trim().isEmpty()) {
+                        replyName = "user";
+                    }
+
+                    etComment.setHint("Replying to @" + replyName);
+                    etComment.requestFocus();
+                    etComment.setSelection(etComment.getText() != null ? etComment.getText().length() : 0);
+
+                    Toast.makeText(getContext(),
+                            "Replying to @" + replyName + ". Tap Reply again to cancel.",
+                            Toast.LENGTH_SHORT).show();
+                },
+                (comment, reactionType) -> toggleReaction(comment, reactionType)
+        );
+
+        rvComments.setLayoutManager(new LinearLayoutManager(requireContext()));
+        rvComments.setAdapter(commentsAdapter);
 
         if (getArguments() != null) {
             eventId = getArguments().getString("eventId");
@@ -261,6 +264,32 @@ public class EntrantEventDetailsFragment extends Fragment {
                                 comment.setMentionedUserNames((List<String>) mentioned);
                             }
 
+                            Object reactionsObj = doc.get("reactions");
+                            if (reactionsObj instanceof Map) {
+                                Map<String, List<String>> reactions = new HashMap<>();
+                                Map<?, ?> rawMap = (Map<?, ?>) reactionsObj;
+
+                                for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                                    String key = String.valueOf(entry.getKey());
+                                    List<String> userIds = new ArrayList<>();
+
+                                    if (entry.getValue() instanceof List) {
+                                        List<?> rawList = (List<?>) entry.getValue();
+                                        for (Object item : rawList) {
+                                            if (item != null) {
+                                                userIds.add(String.valueOf(item));
+                                            }
+                                        }
+                                    }
+
+                                    reactions.put(key, userIds);
+                                }
+
+                                comment.setReactions(reactions);
+                            } else {
+                                comment.setReactions(new HashMap<>());
+                            }
+
                             allComments.add(comment);
                         }
                     }
@@ -363,8 +392,8 @@ public class EntrantEventDetailsFragment extends Fragment {
                     commentData.put("authorName", userName);
                     commentData.put("text", commentText);
                     commentData.put("timestamp", Timestamp.now());
+                    commentData.put("reactions", new HashMap<String, Object>());
 
-                    // If replying, include reply metadata
                     if (selectedReplyComment != null) {
                         commentData.put("parentCommentId", selectedReplyComment.getCommentId());
                         commentData.put("replyToEntrantId", selectedReplyComment.getUserId());
@@ -403,6 +432,68 @@ public class EntrantEventDetailsFragment extends Fragment {
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(), "Failed to get user info", Toast.LENGTH_SHORT).show());
+    }
+
+    private void toggleReaction(Comment comment, String reactionType) {
+        if (comment == null || comment.getCommentId() == null || eventId == null || entrantId == null) {
+            return;
+        }
+
+        db.collection("events")
+                .document(eventId)
+                .collection("comments")
+                .document(comment.getCommentId())
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    if (!snapshot.exists()) return;
+
+                    Object reactionsObj = snapshot.get("reactions");
+                    Map<String, List<String>> reactions = new HashMap<>();
+
+                    if (reactionsObj instanceof Map) {
+                        Map<?, ?> rawMap = (Map<?, ?>) reactionsObj;
+
+                        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+                            String key = String.valueOf(entry.getKey());
+                            List<String> userIds = new ArrayList<>();
+
+                            if (entry.getValue() instanceof List) {
+                                List<?> rawList = (List<?>) entry.getValue();
+                                for (Object item : rawList) {
+                                    if (item != null) {
+                                        userIds.add(String.valueOf(item));
+                                    }
+                                }
+                            }
+
+                            reactions.put(key, userIds);
+                        }
+                    }
+
+                    if (!reactions.containsKey("like")) reactions.put("like", new ArrayList<>());
+                    if (!reactions.containsKey("love")) reactions.put("love", new ArrayList<>());
+                    if (!reactions.containsKey("helpful")) reactions.put("helpful", new ArrayList<>());
+
+                    boolean alreadyReactedToSame = reactions.get(reactionType).contains(entrantId);
+
+                    for (List<String> users : reactions.values()) {
+                        users.remove(entrantId);
+                    }
+
+                    if (!alreadyReactedToSame) {
+                        reactions.get(reactionType).add(entrantId);
+                    }
+
+                    db.collection("events")
+                            .document(eventId)
+                            .collection("comments")
+                            .document(comment.getCommentId())
+                            .update("reactions", reactions)
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(getContext(), "Failed to update reaction", Toast.LENGTH_SHORT).show());
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(getContext(), "Failed to update reaction", Toast.LENGTH_SHORT).show());
     }
 
     private void clearReplyMode() {
