@@ -23,7 +23,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 
 /**
- * wait list map fragment for organizer
+ * Fragment that displays a map with the event location and markers for all entrants
+ * who have joined the waitlist and shared their geolocation.
  */
 public class WaitlistMapFragment extends Fragment implements OnMapReadyCallback {
 
@@ -38,6 +39,12 @@ public class WaitlistMapFragment extends Fragment implements OnMapReadyCallback 
     private GoogleMap googleMap;
     private TextView tvMapSubtitle;
 
+    /**
+     * Creates a new instance of WaitlistMapFragment with event details.
+     * @param eventId The ID of the event.
+     * @param eventName The name of the event.
+     * @return A new instance of WaitlistMapFragment.
+     */
     public static WaitlistMapFragment newInstance(String eventId, String eventName) {
         WaitlistMapFragment fragment = new WaitlistMapFragment();
         Bundle args = new Bundle();
@@ -47,6 +54,9 @@ public class WaitlistMapFragment extends Fragment implements OnMapReadyCallback 
         return fragment;
     }
 
+    /**
+     * Inflates the fragment layout and initializes Firestore and subtitle UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -79,6 +89,11 @@ public class WaitlistMapFragment extends Fragment implements OnMapReadyCallback 
         return view;
     }
 
+    /**
+     * Called when the map is ready to be used.
+     * Initializes map settings and triggers data loading.
+     * @param map The GoogleMap instance.
+     */
     @Override
     public void onMapReady(@NonNull GoogleMap map) {
         googleMap = map;
@@ -88,7 +103,8 @@ public class WaitlistMapFragment extends Fragment implements OnMapReadyCallback 
     }
 
     /**
-     * load map and event marker and proceed to entrant marker
+     * Fetches event location data from Firestore, places the event marker,
+     * and moves the camera to the event location.
      */
     private void loadMapData() {
         db.collection("events")
@@ -144,7 +160,8 @@ public class WaitlistMapFragment extends Fragment implements OnMapReadyCallback 
     }
 
     /**
-     * load entrant markers
+     * Fetches the waitlist subcollection for the event and adds markers for entrants
+     * who have shared their coordinates.
      */
     private void loadEntrantMarkers() {
         db.collection("events")
@@ -192,8 +209,8 @@ public class WaitlistMapFragment extends Fragment implements OnMapReadyCallback 
     }
 
     /**
-     * render subtitle
-     * @param baseMessage
+     * Updates the subtitle text with event info and a status message.
+     * @param baseMessage The status message to append.
      */
     private void renderSubtitle(String baseMessage) {
         if (tvMapSubtitle == null) return;

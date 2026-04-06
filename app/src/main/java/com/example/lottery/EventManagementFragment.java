@@ -38,7 +38,8 @@ import java.io.OutputStream;
 import java.util.List;
 
 /**
- * fragment for event management for organizer
+ * Fragment for event management by an organizer.
+ * Provides options to run a lottery, view entrant lists, send notifications, and export entrant data.
  */
 public class EventManagementFragment extends Fragment {
 
@@ -52,7 +53,14 @@ public class EventManagementFragment extends Fragment {
     private long confirmedCount = 0;
     private long pendingCount = 0;
 
-
+    /**
+     * Inflates the layout and initializes UI components and event services.
+     * Sets up click listeners for various management actions.
+     * @param inflater The LayoutInflater object that can be used to inflate any views in the fragment.
+     * @param container If non-null, this is the parent view that the fragment's UI should be attached to.
+     * @param savedInstanceState If non-null, this fragment is being re-constructed from a previous saved state.
+     * @return Return the View for the fragment's UI.
+     */
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -133,6 +141,10 @@ public class EventManagementFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Fetches entrant IDs from Firestore and generates a CSV string.
+     * Triggers the saving and sharing process for the generated CSV.
+     */
     private void exportEntrantsToCsv() {
         repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
             @Override
@@ -162,6 +174,12 @@ public class EventManagementFragment extends Fragment {
         });
     }
 
+    /**
+     * Appends a list of IDs to a CSV StringBuilder with a specific type label.
+     * @param sb The StringBuilder representing the CSV content.
+     * @param type The label for the entrant list (e.g., "Waitlisted").
+     * @param ids The list of entrant IDs to append.
+     */
     private void appendIdsToCsv(StringBuilder sb, String type, List<String> ids) {
         if (ids != null) {
             for (String id : ids) {
@@ -170,6 +188,11 @@ public class EventManagementFragment extends Fragment {
         }
     }
 
+    /**
+     * Saves the CSV content to the device's Downloads folder and notifies the user.
+     * Handles different Android versions for storage access.
+     * @param content The CSV formatted string to save.
+     */
     private void saveAndShareCsv(String content) {
         String fileName = "entrants_" + eventId + ".csv";
         try {
@@ -205,6 +228,10 @@ public class EventManagementFragment extends Fragment {
         }
     }
 
+    /**
+     * Displays a dialog to input the sample size for the lottery.
+     * Validates the input against remaining spots before running the lottery.
+     */
     private void showSampleSizeDiaglog() {
         EditText input = new EditText(requireContext());
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
@@ -251,6 +278,11 @@ public class EventManagementFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Loads event information related to the waitlist and spots availability from Firestore.
+     * Updates local variables used for lottery validation and UI visibility.
+     * @param view The fragment's root view.
+     */
     private void loadWaitinglistInfo(View view) {
         repo.getEvent(eventId, new RepoCallback<DocumentSnapshot>() {
             @Override

@@ -40,6 +40,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Fragment for administrative event moderation.
+ * Allows admins to view event details, edit fields, moderate comments,
+ * and remove events or organizers.
+ */
 public class AdminEventModerationDetailFragment extends Fragment {
     private String eventId;
     private String eventName;
@@ -54,6 +59,11 @@ public class AdminEventModerationDetailFragment extends Fragment {
     private ListenerRegistration commentsListener;
     private String currentUserId;
 
+    /**
+     * Creates a new instance of this fragment for a specific event.
+     * @param eventId The ID of the event to moderate.
+     * @return A new instance of AdminEventModerationDetailFragment.
+     */
     public static AdminEventModerationDetailFragment newInstance(String eventId) {
         AdminEventModerationDetailFragment fragment = new AdminEventModerationDetailFragment();
         Bundle args = new Bundle();
@@ -62,6 +72,10 @@ public class AdminEventModerationDetailFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Inflates the layout and initializes UI components, Firebase, and adapters.
+     * Sets up click listeners for administrative actions.
+     */
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -102,10 +116,8 @@ public class AdminEventModerationDetailFragment extends Fragment {
                 commentList,
                 currentUserId,
                 comment -> {
-                    // Admin view is read-only for replies
                 },
                 (comment, reactionType) -> {
-                    // Admin view is read-only for reactions
                 }
         );
 
@@ -168,6 +180,9 @@ public class AdminEventModerationDetailFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Configures click listeners for event fields to allow inline editing.
+     */
     private void setupEditableFields(TextView tvEventName, TextView tvDescription,
                                      TextView tvStatusTag, TextView tvLocation) {
         tvEventName.setOnClickListener(v -> showEditDialog("Edit Event Name", "name", tvEventName));
@@ -176,6 +191,12 @@ public class AdminEventModerationDetailFragment extends Fragment {
         tvLocation.setOnClickListener(v -> showEditDialog("Edit Location", "location", tvLocation));
     }
 
+    /**
+     * Shows a dialog to edit a specific Firestore field for the event.
+     * @param title The title of the edit dialog.
+     * @param fieldName The Firestore field name to update.
+     * @param targetView The TextView to update locally after a successful database save.
+     */
     private void showEditDialog(String title, String fieldName, TextView targetView) {
         EditText input = new EditText(requireContext());
         input.setText(targetView.getText());
@@ -205,6 +226,10 @@ public class AdminEventModerationDetailFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * Loads and listens for comments on the current event.
+     * Organizes them into a nested display list.
+     */
     private void loadComments() {
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(getContext(), "Event ID missing", Toast.LENGTH_SHORT).show();
@@ -322,6 +347,11 @@ public class AdminEventModerationDetailFragment extends Fragment {
                 });
     }
 
+    /**
+     * Converts a flat list of comments into a nested hierarchy.
+     * @param allComments The list of all comments for the event.
+     * @return A list of comments ordered for nested display.
+     */
     private List<Comment> buildNestedDisplayList(List<Comment> allComments) {
         List<Comment> displayList = new ArrayList<>();
         Map<String, List<Comment>> childrenMap = new HashMap<>();
@@ -346,6 +376,13 @@ public class AdminEventModerationDetailFragment extends Fragment {
         return displayList;
     }
 
+    /**
+     * Recursively adds reply comments to the display list.
+     * @param parent The current parent comment.
+     * @param childrenMap Map containing lists of replies for each parent ID.
+     * @param displayList The final list being populated.
+     * @param depth Current nesting depth level.
+     */
     private void addRepliesRecursive(Comment parent,
                                      Map<String, List<Comment>> childrenMap,
                                      List<Comment> displayList,
@@ -362,6 +399,9 @@ public class AdminEventModerationDetailFragment extends Fragment {
         }
     }
 
+    /**
+     * Fetches event details from Firestore and updates the UI.
+     */
     private void loadEventDetails(TextView tvEventName, TextView tvDescription,
                                   TextView tvStatusTag, TextView tvTotalSpots,
                                   TextView tvWaitlist, TextView tvConfirmed,
@@ -421,6 +461,9 @@ public class AdminEventModerationDetailFragment extends Fragment {
                         Toast.makeText(getContext(), "Failed to load event details", Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Cleans up listeners when the fragment view is destroyed.
+     */
     @Override
     public void onDestroyView() {
         super.onDestroyView();

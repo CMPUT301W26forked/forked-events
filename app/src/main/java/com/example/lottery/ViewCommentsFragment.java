@@ -24,7 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * fragment for organizer comment view
+ * Fragment for the organizer to view and manage comments for a specific event.
+ * Displays comments in a nested format to show replies.
  */
 public class ViewCommentsFragment extends Fragment {
     private String eventId;
@@ -35,6 +36,12 @@ public class ViewCommentsFragment extends Fragment {
     private EventService service;
     private TextView tvListTitle;
 
+    /**
+     * Creates a new instance of ViewCommentsFragment with event details.
+     * @param eventId The ID of the event to view comments for.
+     * @param eventName The name of the event.
+     * @return A new instance of ViewCommentsFragment.
+     */
     public static ViewCommentsFragment newInstance(String eventId, String eventName) {
         ViewCommentsFragment fragment = new ViewCommentsFragment();
         Bundle args = new Bundle();
@@ -44,6 +51,9 @@ public class ViewCommentsFragment extends Fragment {
         return fragment;
     }
 
+    /**
+     * Inflates the fragment layout and initializes UI components and event service.
+     */
     @Nullable
     @Override
     public View onCreateView(@Nullable LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -71,7 +81,7 @@ public class ViewCommentsFragment extends Fragment {
     }
 
     /**
-     * reload
+     * Fetches comments from the database and updates the RecyclerView.
      */
     private void loadComments() {
         tvListTitle.setText(eventName + " Comments");
@@ -91,8 +101,8 @@ public class ViewCommentsFragment extends Fragment {
     }
 
     /**
-     * delete a comment
-     * @param comment comment to delete
+     * Deletes a specific comment from the database.
+     * @param comment The comment object to be deleted.
      */
     private void deleteComment(EventComment comment) {
         service.deleteComment(eventId, comment.getCommentId(), new RepoCallback<Void>() {
@@ -110,6 +120,11 @@ public class ViewCommentsFragment extends Fragment {
         });
     }
 
+    /**
+     * Organizes a flat list of comments into a nested display list based on parent-child relationships.
+     * @param allComments The flat list of all comments for the event.
+     * @return A list of comments sorted for nested display.
+     */
     private List<EventComment> buildNestedDisplayList(List<EventComment> allComments) {
         List<EventComment> displayList = new ArrayList<>();
         Map<String, List<EventComment>> childrenMap = new HashMap<>();
@@ -134,6 +149,13 @@ public class ViewCommentsFragment extends Fragment {
         return displayList;
     }
 
+    /**
+     * Recursively adds replies to the display list.
+     * @param parent The parent comment.
+     * @param childrenMap Map containing lists of child comments keyed by their parent ID.
+     * @param displayList The list to which comments are being added.
+     * @param depth The current nesting depth level.
+     */
     private void addRepliesRecursively(EventComment parent,
                                        Map<String, List<EventComment>> childrenMap,
                                        List<EventComment> displayList,

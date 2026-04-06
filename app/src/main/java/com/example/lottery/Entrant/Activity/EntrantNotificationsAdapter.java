@@ -20,18 +20,36 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.List;
 
+/**
+ * Adapter for displaying entrant notifications and invitations in a RecyclerView.
+ * This adapter handles the logic for accepting or declining event invitations,
+ * including validation against the current event state in Firestore.
+ */
 public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNotificationsAdapter.NotificationViewHolder> {
 
     private final List<EntrantInvitation> invitationList;
     private final Context context;
     private final FirebaseFirestore db;
 
+    /**
+     * Constructs an EntrantNotificationsAdapter.
+     *
+     * @param invitationList List of entrant invitations to display.
+     * @param context        The context used for inflating layouts and showing toasts.
+     */
     public EntrantNotificationsAdapter(List<EntrantInvitation> invitationList, Context context) {
         this.invitationList = invitationList;
         this.context = context;
         this.db = FirebaseFirestore.getInstance();
     }
 
+    /**
+     * Creates a new NotificationViewHolder by inflating the item_notification layout.
+     *
+     * @param parent   The ViewGroup into which the new View will be added.
+     * @param viewType The view type of the new View.
+     * @return A new NotificationViewHolder that holds the View for each list item.
+     */
     @NonNull
     @Override
     public NotificationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -41,12 +59,13 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
 
     /**
      * Binds invitation data to the notification view holder.
-     * Sets up the invitation UI. title, event details, and status.
+     * Sets up the invitation UI: title, event details, and status.
      * Configures accept/decline button listeners with validation to check
-     * the entrant is still in the pending list (not cancelled by organizer) before allowing response.
+     * that the entrant is still in the pending list (not cancelled by organizer)
+     * before allowing a response.
      *
-     * @param holder The view holder to bind data to
-     * @param position The position of the item in the list
+     * @param holder   The view holder to bind data to.
+     * @param position The position of the item in the list.
      */
     @Override
     public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
@@ -84,7 +103,6 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                 return;
             }
 
-            // Check if entrant is still in pending list (not cancelled by organizer)
             db.collection("events")
                     .document(invitation.getEventId())
                     .get()
@@ -150,7 +168,6 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
                 return;
             }
 
-            // Check if entrant is still in pending list (not cancelled by organizer)
             db.collection("events")
                     .document(invitation.getEventId())
                     .get()
@@ -225,15 +242,28 @@ public class EntrantNotificationsAdapter extends RecyclerView.Adapter<EntrantNot
         });
     }
 
+    /**
+     * Returns the total number of items in the invitation list.
+     *
+     * @return The size of the invitation list.
+     */
     @Override
     public int getItemCount() {
         return invitationList.size();
     }
 
+    /**
+     * ViewHolder for notification items, containing references to the UI elements.
+     */
     public static class NotificationViewHolder extends RecyclerView.ViewHolder {
         TextView tvNotificationTitle, tvNotificationEvent, tvNotificationDate, tvNotificationStatus;
         MaterialButton btnAccept, btnDecline, btnViewDetails;
 
+        /**
+         * Constructs a NotificationViewHolder.
+         *
+         * @param itemView The view representing a single notification item.
+         */
         public NotificationViewHolder(@NonNull View itemView) {
             super(itemView);
             tvNotificationTitle = itemView.findViewById(R.id.tvNotificationTitle);

@@ -25,7 +25,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * adapter for notification service
+ * Adapter for the notification service, handling the display and user interaction
+ * with notifications, such as accepting or declining event invitations.
  */
 public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdapter.NotificationViewHolder> {
 
@@ -34,6 +35,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
     private final Context context;
     private final FirebaseFirestore db;
 
+    /**
+     * Constructs a new NotificationsAdapter.
+     *
+     * @param notificationList The list of notifications to display.
+     * @param entrantId        The ID of the current entrant.
+     * @param context          The context in which the adapter is operating.
+     */
     public NotificationsAdapter(List<Notification> notificationList, String entrantId, Context context) {
         this.notificationList = notificationList;
         this.entrantId = entrantId;
@@ -41,6 +49,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         this.db = FirebaseFirestore.getInstance();
     }
 
+    /**
+     * Called when RecyclerView needs a new ViewHolder of the given type to represent an item.
+     *
+     * @param parent   The ViewGroup into which the new View will be added after it is bound to an adapter position.
+     * @param viewType The view type of the new View.
+     * @return A new NotificationViewHolder that holds a View of the given view type.
+     */
     @NonNull
     @Override
     public NotificationViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -48,6 +63,12 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         return new NotificationViewHolder(view);
     }
 
+    /**
+     * Called by RecyclerView to display the data at the specified position.
+     *
+     * @param holder   The ViewHolder which should be updated to represent the contents of the item at the given position.
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull NotificationViewHolder holder, int position) {
         Notification notification = notificationList.get(position);
@@ -82,6 +103,13 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         });
     }
 
+    /**
+     * Binds the status text and sets the visibility of action buttons (Accept/Decline)
+     * based on the notification type and current status.
+     *
+     * @param holder       The ViewHolder to update.
+     * @param notification The notification data.
+     */
     private void bindStatusAndButtons(@NonNull NotificationViewHolder holder, @NonNull Notification notification) {
         String type = safe(notification.getType());
         String status = safe(notification.getStatus());
@@ -137,6 +165,12 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         }
     }
 
+    /**
+     * Initiates the process of accepting an invitation.
+     *
+     * @param notification The notification representing the invitation.
+     * @param holder       The ViewHolder holding the action buttons.
+     */
     private void acceptInvitation(@NonNull Notification notification, @NonNull NotificationViewHolder holder) {
         if (notification.getNotificationId() == null || notification.getEventId() == null || entrantId == null) {
             Toast.makeText(context, "Missing notification or event info", Toast.LENGTH_SHORT).show();
@@ -167,10 +201,10 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
      * - Entrant is still in the pending list (not cancelled by organizer)
      * If all pass, moves entrant from pending to registered list and updates notification status.
      *
-     * @param snapshot The notification document snapshot
+     * @param snapshot        The notification document snapshot
      * @param notificationRef Reference to the notification document for updates
-     * @param notification The notification object containing event and entrant details
-     * @param holder The view holder for updating UI feedback
+     * @param notification    The notification object containing event and entrant details
+     * @param holder          The view holder for updating UI feedback
      */
     private void handleAcceptAfterCheck(
             @NonNull DocumentSnapshot snapshot,
@@ -187,7 +221,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             return;
         }
 
-        // Check if entrant is still in pending list (not cancelled by organizer)
         db.collection("events").document(notification.getEventId()).get()
                 .addOnSuccessListener(eventDoc -> {
                     if (!eventDoc.exists()) {
@@ -244,6 +277,12 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 });
     }
 
+    /**
+     * Initiates the process of declining an invitation.
+     *
+     * @param notification The notification representing the invitation.
+     * @param holder       The ViewHolder holding the action buttons.
+     */
     private void declineInvitation(@NonNull Notification notification, @NonNull NotificationViewHolder holder) {
         if (notification.getNotificationId() == null || notification.getEventId() == null || entrantId == null) {
             Toast.makeText(context, "Missing notification or event info", Toast.LENGTH_SHORT).show();
@@ -274,10 +313,10 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
      * - Entrant is still in the pending list (not cancelled by organizer)
      * If all pass  , moves entrant from pending to cancelled list and updates notification status.
      *
-     * @param snapshot The notification document snapshot
+     * @param snapshot        The notification document snapshot
      * @param notificationRef Reference to the notification document for updates
-     * @param notification The notification object containing event and entrant details
-     * @param holder The view holder for updating UI feedback
+     * @param notification    The notification object containing event and entrant details
+     * @param holder          The view holder for updating UI feedback
      */
     private void handleDeclineAfterCheck(
             @NonNull DocumentSnapshot snapshot,
@@ -294,7 +333,6 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
             return;
         }
 
-        // Check if entrant is still in pending list (not cancelled by organizer)
         db.collection("events").document(notification.getEventId()).get()
                 .addOnSuccessListener(eventDoc -> {
                     if (!eventDoc.exists()) {
@@ -350,6 +388,12 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
                 });
     }
 
+    /**
+     * Determines the display title for a notification.
+     *
+     * @param notification The notification data.
+     * @return The message if present, otherwise the title, or a default string.
+     */
     private String getDisplayTitle(Notification notification) {
         if (notification.getMessage() != null && !notification.getMessage().trim().isEmpty()) {
             return notification.getMessage();
@@ -360,6 +404,12 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         return "Notification";
     }
 
+    /**
+     * Determines the display date for a notification.
+     *
+     * @param notification The notification data.
+     * @return The formatted date string.
+     */
     private String getDisplayDate(Notification notification) {
         if (notification.getDate() != null && !notification.getDate().trim().isEmpty()) {
             return notification.getDate();
@@ -374,19 +424,38 @@ public class NotificationsAdapter extends RecyclerView.Adapter<NotificationsAdap
         return sdf.format(createdAt.toDate());
     }
 
+    /**
+     * Returns the given string or an empty string if the input is null.
+     *
+     * @param value The input string.
+     * @return The input string or "".
+     */
     private String safe(String value) {
         return value == null ? "" : value;
     }
 
+    /**
+     * Returns the total number of items in the data set held by the adapter.
+     *
+     * @return The total number of notifications.
+     */
     @Override
     public int getItemCount() {
         return notificationList.size();
     }
 
+    /**
+     * ViewHolder class for notification items.
+     */
     static class NotificationViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvEvent, tvDate, tvStatus;
         MaterialButton btnAccept, btnDecline, btnViewDetails;
 
+        /**
+         * Constructs a new NotificationViewHolder.
+         *
+         * @param itemView The view representing a single notification item.
+         */
         public NotificationViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvNotificationTitle);
