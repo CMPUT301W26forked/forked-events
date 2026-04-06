@@ -23,6 +23,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 
+import com.example.lottery.Entrant.Activity.EntrantEventDetailsFragment;
 import com.example.lottery.Entrant.Activity.ViewListsFragment;
 import com.example.lottery.organizer.EventService;
 import com.example.lottery.organizer.FSEventRepo;
@@ -66,6 +67,20 @@ public class EventManagementFragment extends Fragment {
                 getParentFragmentManager().popBackStack();
             }
         });
+
+        View btnEventDetails = view.findViewById(R.id.btnEventDetails);
+        if (btnEventDetails != null) {
+            btnEventDetails.setOnClickListener(v -> {
+                Bundle bundle = new Bundle();
+                bundle.putString("eventId", eventId);
+                EntrantEventDetailsFragment detailsFragment = new EntrantEventDetailsFragment();
+                detailsFragment.setArguments(bundle);
+                getParentFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, detailsFragment)
+                        .addToBackStack(null)
+                        .commit();
+            });
+        }
 
         View btnRunLottery = view.findViewById(R.id.btnRunLottery);
         btnRunLottery.setOnClickListener(v -> showSampleSizeDiaglog());

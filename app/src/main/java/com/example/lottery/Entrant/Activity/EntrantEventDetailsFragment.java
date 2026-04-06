@@ -76,6 +76,7 @@ public class EntrantEventDetailsFragment extends Fragment {
     private RecyclerView rvComments;
     private TextInputEditText etComment;
     private MaterialButton btnPostComment;
+    private ImageButton btnShowQr;
 
     private List<Comment> commentList;
     private CommentsAdapter commentsAdapter;
@@ -106,7 +107,7 @@ public class EntrantEventDetailsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_event_details, container, false);
 
         ImageButton btnBack = view.findViewById(R.id.btnBack);
-        ImageButton btnShowQr = view.findViewById(R.id.btnShowQr);
+        btnShowQr = view.findViewById(R.id.btnShowQr);
         MaterialButton btnJoin = view.findViewById(R.id.btnJoin);
         TextView tvEventName = view.findViewById(R.id.tvEventName);
         TextView tvDescription = view.findViewById(R.id.tvDescription);
@@ -575,6 +576,18 @@ public class EntrantEventDetailsFragment extends Fragment {
                                 .into(ivEventPoster);
                     }
 
+                    // Hide QR button for private events
+                    Boolean isPrivate = doc.getBoolean("isPrivate");
+                    if (isPrivate != null && isPrivate) {
+                        if (btnShowQr != null) {
+                            btnShowQr.setVisibility(View.GONE);
+                        }
+                        // Hide Join Waitlist button for private events
+                        btnJoin.setVisibility(View.GONE);
+                    } else if (btnShowQr != null) {
+                        btnShowQr.setVisibility(View.VISIBLE);
+                    }
+
                     List<String> registeredIds = (List<String>) doc.get("registeredEntrantIds");
                     List<String> cancelledIds = (List<String>) doc.get("cancelledEntrantIds");
                     if ((registeredIds != null && registeredIds.contains(entrantId))
@@ -583,13 +596,16 @@ public class EntrantEventDetailsFragment extends Fragment {
                         return;
                     }
 
-                    List<String> waitlistedIds = (List<String>) doc.get("waitlistedEntrantIds");
-                    if (waitlistedIds != null && waitlistedIds.contains(entrantId)) {
-                        isOnWaitlist = true;
-                        setLeaveWaitlistStyle(btnJoin);
-                    } else {
-                        isOnWaitlist = false;
-                        setJoinWaitlistStyle(btnJoin);
+                    // Only handle waitlist style if not already hidden by isPrivate check
+                    if (btnJoin.getVisibility() != View.GONE) {
+                        List<String> waitlistedIds = (List<String>) doc.get("waitlistedEntrantIds");
+                        if (waitlistedIds != null && waitlistedIds.contains(entrantId)) {
+                            isOnWaitlist = true;
+                            setLeaveWaitlistStyle(btnJoin);
+                        } else {
+                            isOnWaitlist = false;
+                            setJoinWaitlistStyle(btnJoin);
+                        }
                     }
                 })
                 .addOnFailureListener(e ->
