@@ -21,7 +21,6 @@ import com.example.lottery.Entrant.Model.EntrantProfile;
 import com.example.lottery.organizer.FSEventRepo;
 import com.example.lottery.organizer.RepoCallback;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -43,7 +42,6 @@ public class SearchProfilesFragment extends Fragment {
     private ProfileAdapter adapter;
     private List<EntrantProfile> profileList;
     private List<EntrantProfile> filteredList;
-    private Set<String> allowedIds;
     private FirebaseFirestore db;
     private FSEventRepo repo;
     private EditText etSearch;
@@ -90,15 +88,18 @@ public class SearchProfilesFragment extends Fragment {
         repo = new FSEventRepo();
         profileList = new ArrayList<>();
         filteredList = new ArrayList<>();
-        allowedIds = new HashSet<>();
 
         etSearch = view.findViewById(R.id.etSearch);
         recyclerView = view.findViewById(R.id.rvProfiles);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         TextView tvTitle = view.findViewById(R.id.tvTitle);
-        if (tvTitle != null && isCoOrganizerMode) {
-            tvTitle.setText("Add Co-organizer");
+        if (tvTitle != null) {
+            if (isCoOrganizerMode) {
+                tvTitle.setText("Add Co-organizer");
+            } else {
+                tvTitle.setText("Invite Entrants");
+            }
         }
 
         adapter = new ProfileAdapter(filteredList, profile -> {
@@ -111,6 +112,8 @@ public class SearchProfilesFragment extends Fragment {
 
         if (isCoOrganizerMode) {
             adapter.setButtonText("Add");
+        } else {
+            adapter.setButtonText("Invite");
         }
 
         recyclerView.setAdapter(adapter);
@@ -195,64 +198,64 @@ public class SearchProfilesFragment extends Fragment {
     }
 
     /**
-     * Fetches all eligible profiles from Firestore based on the current mode.
+     * Fetches all eligible profiles from Firestore.
      * Excludes guest users and the current user.
+     * In Invite mode, it filters out users already associated with the event.
      */
     private void fetchAllProfiles() {
         String currentUserId = FirebaseAuth.getInstance().getUid();
-        if (isCoOrganizerMode) {
-            db.collection("users")
-                    .whereEqualTo("isGuest", false)
-                    .get()
-                    .addOnSuccessListener(queryDocumentSnapshots -> {
-                        profileList.clear();
-                        for (QueryDocumentSnapshot userDoc : queryDocumentSnapshots) {
-                            if (currentUserId != null && currentUserId.equals(userDoc.getId())) {
-                                continue;
-                            }
-                            EntrantProfile profile = userDoc.toObject(EntrantProfile.class);
-                            if (profile != null) {
-                                profile.setId(userDoc.getId());
-                                profileList.add(profile);
-                            }
+        
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<EntrantProfile> allPossible = new ArrayList<>();
+                    for (QueryDocumentSnapshot userDoc : queryDocumentSnapshots) {
+                        String uid = userDoc.getId();
+                        if (currentUserId != null && currentUserId.equals(uid)) {
+                            continue;
                         }
-                        filterProfiles(etSearch.getText().toString());
-                    });
-        } else {
-            if (eventId == null) return;
-            db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
-                allowedIds.clear();
-                if (doc.exists()) {
-                    List<String> pending = (List<String>) doc.get("pendingEntrantIds");
-                    List<String> registered = (List<String>) doc.get("registeredEntrantIds");
-                    List<String> cancelled = (List<String>) doc.get("cancelledEntrantIds");
+                        
+                        Boolean isGuest = userDoc.getBoolean("isGuest");
+                        if (isGuest != null && isGuest) {
+                            continue;
+                        }
 
-                    if (pending != null) allowedIds.addAll(pending);
-                    if (registered != null) allowedIds.addAll(registered);
-                    if (cancelled != null) allowedIds.addAll(cancelled);
-                }
+                        EntrantProfile profile = userDoc.toObject(EntrantProfile.class);
+                        if (profile != null) {
+                            profile.setId(uid);
+                            allPossible.add(profile);
+                        }
+                    }
 
-                db.collection("users")
-                        .whereEqualTo("isGuest", false)
-                        .get()
-                        .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!isCoOrganizerMode && eventId != null) {
+                        db.collection("events").document(eventId).get().addOnSuccessListener(doc -> {
                             profileList.clear();
-                            for (QueryDocumentSnapshot userDoc : queryDocumentSnapshots) {
-                                if (currentUserId != null && currentUserId.equals(userDoc.getId())) {
-                                    continue;
-                                }
-                                if (allowedIds.contains(userDoc.getId())) {
-                                    EntrantProfile profile = userDoc.toObject(EntrantProfile.class);
-                                    if (profile != null) {
-                                        profile.setId(userDoc.getId());
-                                        profileList.add(profile);
-                                    }
+                            Set<String> alreadyInEvent = new HashSet<>();
+                            if (doc.exists()) {
+                                List<String> pending = (List<String>) doc.get("pendingEntrantIds");
+                                List<String> registered = (List<String>) doc.get("registeredEntrantIds");
+                                if (pending != null) alreadyInEvent.addAll(pending);
+                                if (registered != null) alreadyInEvent.addAll(registered);
+                            }
+                            
+                            for (EntrantProfile p : allPossible) {
+                                if (!alreadyInEvent.contains(p.getId())) {
+                                    profileList.add(p);
                                 }
                             }
                             filterProfiles(etSearch.getText().toString());
+                        }).addOnFailureListener(e -> {
+                            profileList.clear();
+                            profileList.addAll(allPossible);
+                            filterProfiles(etSearch.getText().toString());
                         });
-            }).addOnFailureListener(e -> Log.e("SearchProfiles", "Error fetching event", e));
-        }
+                    } else {
+                        profileList.clear();
+                        profileList.addAll(allPossible);
+                        filterProfiles(etSearch.getText().toString());
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("SearchProfiles", "Error fetching users", e));
     }
 
     /**
