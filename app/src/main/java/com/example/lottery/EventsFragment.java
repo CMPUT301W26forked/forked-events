@@ -15,6 +15,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Fragment that displays a list of public events.
+ * Retrieves event data from Firestore and shows it in a RecyclerView.
+ */
 public class EventsFragment extends Fragment {
 
     private static final String TAG = "EventsFragment";
@@ -43,6 +47,10 @@ public class EventsFragment extends Fragment {
         return view;
     }
 
+    /**
+     * Fetches events from Firestore database.
+     * Only public (non-private) events are added to the list.
+     */
     private void fetchEventsFromFirestore() {
         db.collection("events")
                 .get()

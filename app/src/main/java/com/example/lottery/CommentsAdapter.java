@@ -17,22 +17,41 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * adapter for event comments list
+ * Adapter for displaying event comments in a RecyclerView.
+ * Handles nested comments (replies) and delete actions.
  */
 public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.CommentViewHolder> {
 
+    /**
+     * Interface for handling delete button clicks on comments.
+     */
     public interface OnDeleteClickListener {
+        /**
+         * Called when a comment delete button is clicked.
+         * @param comment the comment to delete
+         */
         void onDeleteClick(EventComment comment);
     }
 
+    /** List of comments to display */
     private final List<EventComment> commentList;
+
+    /** Listener for delete actions */
     private final OnDeleteClickListener deleteClickListener;
 
+    /**
+     * Constructor for CommentsAdapter.
+     * @param commentList list of comments
+     * @param deleteClickListener delete button listener
+     */
     public CommentsAdapter(List<EventComment> commentList, OnDeleteClickListener deleteClickListener) {
         this.commentList = commentList;
         this.deleteClickListener = deleteClickListener;
     }
 
+    /**
+     * Creates a new ViewHolder for a comment item.
+     */
     @NonNull
     @Override
     public CommentViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -41,6 +60,9 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         return new CommentViewHolder(view);
     }
 
+    /**
+     * Binds comment data to the ViewHolder.
+     */
     @Override
     public void onBindViewHolder(@NonNull CommentViewHolder holder, int position) {
         EventComment comment = commentList.get(position);
@@ -53,16 +75,20 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         String author = comment.getAuthorName();
         String text = comment.getText();
 
+        // Set author name or default value
         holder.tvAuthorName.setText(
                 author == null || author.trim().isEmpty() ? "Unknown User" : author
         );
 
+        // Set comment text or default value
         holder.tvCommentText.setText(
                 text == null || text.trim().isEmpty() ? "(empty comment)" : text
         );
 
+        // Format and display timestamp
         holder.tvCommentDate.setText(formatTimeStamp(comment.getCreatedAt()));
 
+        // Show reply information if comment is a reply
         if (comment.isReply()) {
             holder.tvReplyInfo.setVisibility(View.VISIBLE);
 
@@ -76,6 +102,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
             holder.tvReplyInfo.setVisibility(View.GONE);
         }
 
+        // Set indentation based on comment depth (for nested replies)
         int left = dpToPx(holder.itemView, 12 + (comment.getDepth() * 28));
         holder.commentContentContainer.setPadding(
                 left,
@@ -84,6 +111,7 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
                 dpToPx(holder.itemView, 12)
         );
 
+        // Handle delete button click
         holder.btnDeleteComment.setOnClickListener(v -> {
             if (deleteClickListener != null) {
                 deleteClickListener.onDeleteClick(comment);
@@ -94,6 +122,9 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
                 "text=" + comment.getText() + " depth=" + comment.getDepth());
     }
 
+    /**
+     * ViewHolder class for comment items.
+     */
     static class CommentViewHolder extends RecyclerView.ViewHolder {
         View commentContentContainer;
         TextView tvAuthorName;
@@ -102,6 +133,9 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         TextView tvCommentDate;
         MaterialButton btnDeleteComment;
 
+        /**
+         * Initializes all UI components for a comment item.
+         */
         CommentViewHolder(@NonNull View itemView) {
             super(itemView);
             commentContentContainer = itemView.findViewById(R.id.commentContentContainer);
@@ -113,6 +147,11 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         }
     }
 
+    /**
+     * Formats a Firestore Timestamp into a readable string.
+     * @param timestamp Firestore timestamp
+     * @return formatted date string
+     */
     private String formatTimeStamp(Timestamp timestamp) {
         if (timestamp == null) return "";
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
@@ -124,6 +163,9 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         return Math.round(dp * density);
     }
 
+    /**
+     * Returns total number of comments.
+     */
     @Override
     public int getItemCount() {
         return commentList.size();

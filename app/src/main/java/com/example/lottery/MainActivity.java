@@ -18,8 +18,17 @@ import com.example.lottery.Entrant.Activity.QrScannerFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
+/**
+ * Main activity of the app.
+ * Handles user authentication check and navigation between fragments
+ * using a bottom navigation bar.
+ */
 public class MainActivity extends AppCompatActivity {
 
+    /**
+     * Called when the activity is created.
+     * Sets up authentication check, UI layout, and navigation.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

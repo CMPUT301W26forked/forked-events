@@ -27,6 +27,9 @@ public class EventComment {
         this.depth = 0;
     }
 
+    /**
+     * Constructor for a top-level comment (not a reply).
+     */
     public EventComment(String commentId,
                         String authorName,
                         String entrantId,
@@ -44,6 +47,9 @@ public class EventComment {
         this.depth = 0;
     }
 
+    /**
+     * Constructor for a reply comment.
+     */
     public EventComment(String commentId,
                         String authorName,
                         String entrantId,
@@ -89,6 +95,10 @@ public class EventComment {
     }
     public void setDepth(int depth) { this.depth = depth; }
 
+    /**
+     * Checks if this comment is a reply.
+     * @return true if it has a parent comment
+     */
     public boolean isReply() {
         return parentCommentId != null && !parentCommentId.trim().isEmpty();
     }

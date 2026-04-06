@@ -14,6 +14,10 @@ import com.bumptech.glide.Glide;
 
 import java.util.List;
 
+/**
+ * Adapter class for displaying a list of events in a RecyclerView.
+ * Binds event data to the item_event layout.
+ */
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
 
     private List<Event> eventList;
@@ -23,11 +27,19 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         void onEventClick(Event event);
     }
 
+    /**
+     * Constructor for EventAdapter.
+     * @param eventList list of events
+     * @param listener click listener
+     */
     public EventAdapter(List<Event> eventList, OnEventClickListener listener) {
         this.eventList = eventList;
         this.listener = listener;
     }
 
+    /**
+     * Creates a new ViewHolder for an event item.
+     */
     @NonNull
     @Override
     public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -35,6 +47,9 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         return new EventViewHolder(view);
     }
 
+    /**
+     * Binds event data to the ViewHolder.
+     */
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = eventList.get(position);
@@ -65,17 +80,26 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         });
     }
 
+    /**
+     * Returns total number of events.
+     */
     @Override
     public int getItemCount() {
         return eventList == null ? 0 : eventList.size();
     }
 
+    /**
+     * ViewHolder class for holding event item views.
+     */
     static class EventViewHolder extends RecyclerView.ViewHolder {
 
         CardView eventCard;
         ImageView ivEventPoster;
         TextView tvEventTitle, tvStatus, tvDescription, tvLocation, tvDate, tvSpots, tvWaitlist, tvJoined;
 
+        /**
+         * Constructor that initializes all views in the item layout.
+         */
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
 
