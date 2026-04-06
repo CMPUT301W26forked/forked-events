@@ -5,12 +5,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 import androidx.fragment.app.FragmentManager;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 
 /**
@@ -38,6 +40,17 @@ public class OrganizerAdapter extends RecyclerView.Adapter<OrganizerAdapter.Even
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = eventList.get(position);
         holder.tvTitle.setText(event.getTitle());
+
+        if (event.getPosterUri() != null && !event.getPosterUri().isEmpty()) {
+            holder.ivPoster.setVisibility(View.VISIBLE);
+            Glide.with(holder.itemView.getContext())
+                    .load(event.getPosterUri())
+                    .centerCrop()
+                    .into(holder.ivPoster);
+        } else {
+            holder.ivPoster.setVisibility(View.GONE);
+        }
+
         // to management
         holder.btnManage.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
@@ -74,11 +87,13 @@ public class OrganizerAdapter extends RecyclerView.Adapter<OrganizerAdapter.Even
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
+        ImageView ivPoster;
         Button btnManage;
         Button btnEdit;
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.tvOrganizerEventTitle);
+            ivPoster = itemView.findViewById(R.id.ivOrganizerEventPoster);
             btnManage = itemView.findViewById(R.id.btnManage);
             btnEdit = itemView.findViewById(R.id.btnEdit);
         }

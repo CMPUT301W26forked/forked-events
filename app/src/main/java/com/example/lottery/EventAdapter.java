@@ -3,11 +3,14 @@ package com.example.lottery;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 
 import java.util.List;
 
@@ -45,6 +48,16 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.tvWaitlist.setText(event.getWaitlistInfo());
         holder.tvJoined.setText(event.getJoinedCount());
 
+        if (event.getPosterUri() != null && !event.getPosterUri().isEmpty()) {
+            holder.ivEventPoster.setVisibility(View.VISIBLE);
+            Glide.with(holder.itemView.getContext())
+                    .load(event.getPosterUri())
+                    .centerCrop()
+                    .into(holder.ivEventPoster);
+        } else {
+            holder.ivEventPoster.setVisibility(View.GONE);
+        }
+
         holder.eventCard.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onEventClick(event);
@@ -60,12 +73,14 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     static class EventViewHolder extends RecyclerView.ViewHolder {
 
         CardView eventCard;
+        ImageView ivEventPoster;
         TextView tvEventTitle, tvStatus, tvDescription, tvLocation, tvDate, tvSpots, tvWaitlist, tvJoined;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
 
             eventCard = itemView.findViewById(R.id.eventCard);
+            ivEventPoster = itemView.findViewById(R.id.ivEventPoster);
             tvEventTitle = itemView.findViewById(R.id.tvEventTitle);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvDescription = itemView.findViewById(R.id.tvDescription);

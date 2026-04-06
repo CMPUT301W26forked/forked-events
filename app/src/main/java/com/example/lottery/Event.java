@@ -21,6 +21,7 @@ public class Event {
     private String waitlistInfo;
     private String joinedCount;
     private boolean isPrivate;
+    private String posterUri;
 
     // fields matching firestore
     private String name;
@@ -341,5 +342,13 @@ public class Event {
     @PropertyName("isPrivate")
     public void setPrivate(boolean isPrivate) {
         this.isPrivate = isPrivate;
+    }
+
+    public String getPosterUri() {
+        return posterUri;
+    }
+
+    public void setPosterUri(String posterUri) {
+        this.posterUri = posterUri;
     }
 }
